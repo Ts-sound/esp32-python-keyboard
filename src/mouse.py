@@ -16,15 +16,18 @@ time.sleep(60)
 
 def send(b1=0,b2=0,b3=0):
   if(mouse.is_connected()):
+    print("send",b1,b2,b3)
     mouse.set_buttons(b1,b2,b3)
     mouse.notify_hid_report()
     time.sleep_ms(50)
     
 def test():
-  for i in range(30):
+  for i in range(120):
     print("test : ",i)
-    # send(1,0,0)
-    # time.sleep(1)
+    send(1,0,0)
+    time.sleep(1)
+    send(0,0,0)
+    time.sleep(1)
     # send(0,1,0)
     # time.sleep(1)
     # send(0,0,1)
