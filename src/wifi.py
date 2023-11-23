@@ -6,11 +6,9 @@ key = "12345678"
 
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
+print(nic.scan())
 s = socket.socket()
-s.bind(("0.0.0.0", 80))
-s.listen(5)
-client, address = s.accept()
-client.settimeout(0.2)
+global client
 
 def Send(msg= ""):
     try:
@@ -21,20 +19,30 @@ def Send(msg= ""):
 def main():
     nic.connect(ssid, key)
     while True:
-        if nic.disconnect():
-            time.sleep(1)
+        if not nic.isconnected():
+            nic.disconnect()
             nic.connect(ssid, key)
+            time.sleep(1)
+            print("connect : ",nic.isconnected())
+            if(nic.isconnected()):
+                print("start listening at 80 ...")
+                s.bind(("0.0.0.0", 80))
+                s.listen(5)
+                client, address = s.accept()
+                client.settimeout(10)
         else:
             try:
-                data = client.recv(1024)
-                msg_queue.Publish("wifi/recv",str(data,encoding = "utf-8"))
-            except:
-                print("recv error")
-                print("reconnecting ...")
-                client, address = s.accept()
-                client.settimeout(0.2)
+                if client :
+                    data = client.recv(1024)
+                    print(data)
+                    msg_queue.Publish("wifi/raw",str(data,"utf-8"))
+            except Exception as e:
+                print(e)
+                
+    return 0
 
             
             
 
-_thread.start_new_thread(main)
+_thread.start_new_thread(main,())
+print("wifi start")

@@ -13,7 +13,6 @@ keyboard = hid_services.Keyboard()
 def keyboard_state_callback():
   return
 
-keyboard.set_bonding(True)
 keyboard.set_state_change_callback(keyboard_state_callback)
 keyboard.start()
 keyboard.start_advertising()
@@ -37,6 +36,13 @@ def get_ket_val(char=""):
   return key
 
 def send_key():
+  if not keyboard.is_connected():
+    keyboard.stop_advertising()
+    time.sleep_ms(20)
+    keyboard.start_advertising()
+    time.sleep_ms(20)
+    return
+  
   time.sleep_ms(20)
   print(" key = ",key," shift = ",shift," ctrl = ",ctrl)
   keyboard.set_keys(key)
@@ -53,10 +59,14 @@ def Handle(msg=""):
   elif(msg == "clear"):
      shift=ctrl=key=0
   else:
-     key = get_ket_val(msg)
+    try:
+      key = get_ket_val(msg)
+    except Exception as e:
+      print("keyboard exept : ",e)
 
   if(key >=0):
     send_key()
      
 
 msg_queue.Subscribe("wifi/raw",Handle)
+print("keyboard")

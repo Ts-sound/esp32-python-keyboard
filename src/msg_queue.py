@@ -11,12 +11,12 @@ sub_map = collections.OrderedDict([("",[NullFunc])])
 
 def Publish(topic="",msg=""):
     try:
-        print("run topic ",topic," sub func")
+        print("run topic ",topic," msg :",msg)
         subs = sub_map[topic]
         for s in subs:
             s(msg)
-    except:
-        print("Publish error")
+    except Exception as e:
+        print("Publish error : ",e)
 
 def Subscribe(topic="",func=NullFunc):
     try:

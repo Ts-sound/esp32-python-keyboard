@@ -2,22 +2,25 @@ import msg_queue,_thread,time,random
 import keyboard
 
 class State():
-  NULL=0
+  IDEL=0
   JIG=1
 
 state = State()
-state = State.NULL
+state = State.IDEL
 _time_ms = [1135,1985]
 
 def Handle(msg=""):
-  global _time_ms
+  global _time_ms,state
 
   strs = msg.split(";")
+  print(strs)
   try:
     if(strs[0] == "jig"):
         state = State.JIG
-        _time_ms[0] = int(str[1])
-        _time_ms[1] = int(str[2])
+        _time_ms[0] = int(strs[1])
+        _time_ms[1] = int(strs[2])
+    elif(strs[0] == "clear"):
+      state = State.IDEL
     else:
         print ("rf4 not handle: ",msg)
   except Exception as e:
@@ -50,6 +53,7 @@ def main():
     else:
       time.sleep(2)
 
-  return
+  return 0
 
-_thread.start_new_thread(main)
+_thread.start_new_thread(main,())
+print("rf4 start")

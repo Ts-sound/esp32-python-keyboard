@@ -20,7 +20,7 @@ led_pin=2
 led = Pin(led_pin, Pin.OUT)
 for i in range(3):
     led.value(0)
-    time.sleep_ms(500)
+    time.sleep_ms(200)
     led.value(1)
-    time.sleep_ms(500)
+    time.sleep_ms(200)
     
