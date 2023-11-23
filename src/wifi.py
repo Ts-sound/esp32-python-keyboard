@@ -29,7 +29,7 @@ def main():
                 s.bind(("0.0.0.0", 80))
                 s.listen(5)
                 client, address = s.accept()
-                client.settimeout(10)
+                client.settimeout(1800)
         else:
             try:
                 if client :
@@ -38,6 +38,8 @@ def main():
                     msg_queue.Publish("wifi/raw",str(data,"utf-8"))
             except Exception as e:
                 print(e)
+                client, address = s.accept()
+                client.settimeout(1800)
                 
     return 0
 
