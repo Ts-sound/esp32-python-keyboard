@@ -24,6 +24,7 @@ def Subscribe(topic="",func=NullFunc):
             sub_map[topic].append(func)
         else :
             sub_map[topic] = [func]
+        print(sub_map)
     except:
         print("Subscribe error")
 

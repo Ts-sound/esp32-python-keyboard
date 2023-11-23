@@ -7,8 +7,10 @@ key = "12345678"
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
 s = socket.socket()
+s.bind(("0.0.0.0", 80))
 s.listen(5)
 client, address = s.accept()
+client.settimeout(0.2)
 
 def Send(msg= ""):
     try:
@@ -30,6 +32,8 @@ def main():
                 print("recv error")
                 print("reconnecting ...")
                 client, address = s.accept()
+                client.settimeout(0.2)
+
             
             
 
