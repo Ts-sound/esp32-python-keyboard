@@ -8,6 +8,7 @@ def mouse_state_callback():
   return
 
 mouse.set_state_change_callback(mouse_state_callback)
+mouse.set_bonding(True)
 mouse.start()
 mouse.start_advertising()
 print("mouse start")

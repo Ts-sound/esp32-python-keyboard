@@ -9,6 +9,13 @@ def test():
     print("test")
     mouse.test()
 
+def start():
+    import keyboard
+    import rf4
+    import wifi
+    print("start rf4 ")
+
+
 led_pin=2
 led = Pin(led_pin, Pin.OUT)
 for i in range(3):
