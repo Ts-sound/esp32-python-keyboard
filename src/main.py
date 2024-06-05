@@ -23,4 +23,5 @@ for i in range(3):
     time.sleep_ms(200)
     led.value(1)
     time.sleep_ms(200)
-    
+
+start()

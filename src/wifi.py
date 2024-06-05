@@ -18,9 +18,11 @@ def Send(msg= ""):
 
 def main():
     nic.connect(ssid, key)
+    time.sleep(5)
     while True:
         if not nic.isconnected():
             nic.disconnect()
+            time.sleep(1)
             nic.connect(ssid, key)
             time.sleep(1)
             print("connect : ",nic.isconnected())
