@@ -38,13 +38,6 @@ def get_ket_val(char=""):
   return key
 
 def send_key():
-  # if not keyboard.is_connected():
-  #   keyboard.stop_advertising()
-  #   time.sleep_ms(20)
-  #   keyboard.start_advertising()
-  #   time.sleep_ms(20)
-  #   return
-  
   time.sleep_ms(20)
   print(" key = ",keys," shift = ",shift," ctrl = ",ctrl)
   keyboard.set_keys(keys[0],keys[1])

@@ -6,7 +6,16 @@ key = "12345678"
 
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
+
+# 如果已经连接，则断开连接
+if nic.isconnected():
+    nic.disconnect()
+
+# 设置固定 IP 地址
+nic.ifconfig(('192.168.137.5', '255.255.255.0', '192.168.137.1', '8.8.8.8'))
+
 print(nic.scan())
+
 s = socket.socket()
 global client
 
@@ -16,16 +25,21 @@ def Send(msg= ""):
     except:
         print("send error ")
 
+def do_connect():
+    global nic
+    if not nic.isconnected():
+        print('connecting to network...')
+        nic.connect(ssid, key)
+        while not nic.isconnected():
+            pass
+    print('network config:', nic.ifconfig())
+
 def main():
     nic.connect(ssid, key)
     time.sleep(5)
     while True:
         if not nic.isconnected():
-            nic.disconnect()
-            time.sleep(1)
-            nic.connect(ssid, key)
-            time.sleep(1)
-            print("connect : ",nic.isconnected())
+            do_connect()
             if(nic.isconnected()):
                 print("start listening at 80 ...")
                 s.bind(("0.0.0.0", 80))
