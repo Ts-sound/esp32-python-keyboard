@@ -39,12 +39,12 @@ def Sleep_ms(time_ms:float):
 msg_queue.Subscribe("wifi/raw",Handle)
 
 def Jig():
-    keyboard.Handle(";")
+    keyboard.Handle("",";")
     Sleep_ms(_time_ms[0])
     keyboard.Handle("clear")
     Sleep_ms(84)
 
-    keyboard.Handle("enter")
+    keyboard.Handle("","enter")
     Sleep_ms(36)
     keyboard.Handle("clear")
     Sleep_ms(_time_ms[1])

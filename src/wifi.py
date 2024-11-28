@@ -4,43 +4,43 @@ import msg_queue
 ssid = "T"
 key = "12345678"
 
-nic = network.WLAN(network.STA_IF)
-nic.active(True)
-
-# 如果已经连接，则断开连接
-if nic.isconnected():
-    nic.disconnect()
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
+time.sleep(4)
 
 # 设置固定 IP 地址
-nic.ifconfig(('192.168.137.5', '255.255.255.0', '192.168.137.1', '8.8.8.8'))
+# nic.ifconfig(('192.168.137.5', '255.255.255.0', '192.168.137.1', '8.8.8.8'))
 
-print(nic.scan())
+# print(nic.scan())
 
 s = socket.socket()
-global client
+client=None
 
 def Send(msg= ""):
+    global client
     try:
         client.send(msg)    
     except:
         print("send error ")
 
 def do_connect():
-    global nic
-    if not nic.isconnected():
+    global wlan
+    print( wlan.scan())
+    if not wlan.isconnected():
         print('connecting to network...')
-        nic.connect(ssid, key)
-        while not nic.isconnected():
+        wlan.connect(ssid, key)
+        while not wlan.isconnected():
+            time.sleep(2)
+            print('connecting...')
             pass
-    print('network config:', nic.ifconfig())
+    print('network config:', wlan.ifconfig())
 
 def main():
-    nic.connect(ssid, key)
-    time.sleep(5)
+    global client,wlan
     while True:
-        if not nic.isconnected():
+        if not wlan.isconnected():
             do_connect()
-            if(nic.isconnected()):
+            if(wlan.isconnected()):
                 print("start listening at 80 ...")
                 s.bind(("0.0.0.0", 80))
                 s.listen(5)

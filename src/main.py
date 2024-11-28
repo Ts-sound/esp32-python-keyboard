@@ -25,3 +25,9 @@ for i in range(3):
     time.sleep_ms(200)
 
 start()
+
+while True:
+    led.value(0)
+    time.sleep_ms(1000)
+    led.value(1)
+    time.sleep_ms(1000)
