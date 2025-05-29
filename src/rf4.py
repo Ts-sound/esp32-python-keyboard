@@ -32,7 +32,7 @@ def Handle(msg=""):
     print("rf4 except ",e)
 
 def Sleep_ms(time_ms:float):
-    t = random.uniform(time_ms*0.8,time_ms*1.2)
+    t = random.uniform(time_ms*0.9,time_ms*1.1)
     t/=1000 # ms -> s
     time.sleep(t)
 
@@ -42,12 +42,12 @@ def Jig():
     keyboard.Handle("",";")
     Sleep_ms(_time_ms[0])
     keyboard.Handle("clear")
-    Sleep_ms(84)
-
-    keyboard.Handle("","enter")
-    Sleep_ms(36)
-    keyboard.Handle("clear")
     Sleep_ms(_time_ms[1])
+
+    # keyboard.Handle("","enter")
+    # Sleep_ms(124)
+    # keyboard.Handle("clear")
+    # Sleep_ms(_time_ms[1])
   
 def Pull():
     keyboard.Handle("",";")

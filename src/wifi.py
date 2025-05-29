@@ -50,6 +50,9 @@ def main():
             try:
                 if client :
                     data = client.recv(1024)
+                    if len(data)==0:
+                        time.sleep(1)
+                        continue
                     print(data)
                     msg_queue.Publish("wifi/raw",str(data,"utf-8"))
             except Exception as e:
