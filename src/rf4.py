@@ -50,19 +50,11 @@ def Jig():
     # Sleep_ms(_time_ms[1])
   
 def Pull():
-    keyboard.Handle("",";")
-    Sleep_ms(84)
-    
-    cnt = 20
-    while cnt:
-      cnt -=1
-      keyboard.Handle("",";","'")
-      Sleep_ms(_time_ms[0])
-      keyboard.Handle("",";")
-      Sleep_ms(_time_ms[1])
 
-    global state
-    state = State.IDEL
+    keyboard.Handle("",";","'")
+    Sleep_ms(_time_ms[0])
+    keyboard.Handle("",";")
+    Sleep_ms(_time_ms[1])
   
 
 def main():
