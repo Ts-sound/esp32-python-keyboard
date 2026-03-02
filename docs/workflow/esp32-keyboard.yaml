@@ -1,9 +1,9 @@
 scenario: project_init
 project_name: esp32-keyboard
 created: '2026-03-02T02:53:27.636961'
-updated: '2026-03-02T02:55:07.949195'
-current_stage: 2
-status: active
+updated: '2026-03-02T03:05:44.723449'
+current_stage: 5
+status: completed
 stages:
 - id: 1
   name: project-structure
@@ -15,28 +15,28 @@ stages:
 - id: 2
   name: brainstorming
   skill: brainstorming
-  status: in_progress
+  status: completed
   started_at: '2026-03-02T02:55:07.949185'
-  completed_at: null
+  completed_at: '2026-03-02T03:05:23.611552'
   output: null
 - id: 3
   name: project-docs
   skill: project-docs
-  status: pending
-  started_at: null
-  completed_at: null
+  status: completed
+  started_at: '2026-03-02T03:05:00.388648'
+  completed_at: '2026-03-02T03:05:23.611586'
   output: null
 - id: 4
   name: writing-plans
   skill: writing-plans
-  status: pending
-  started_at: null
+  status: in_progress
+  started_at: '2026-03-02T03:05:23.611588'
   completed_at: null
   output: null
 - id: 5
   name: project-task
   skill: project-task
-  status: pending
-  started_at: null
-  completed_at: null
+  status: in_progress
+  started_at: '2026-03-02T03:05:36.941881'
+  completed_at: '2026-03-02T03:05:44.723411'
   output: null
