@@ -6,10 +6,20 @@
 
 ## 类结构
 
-```
-MouseDevice
-├── _hid: MouseDriver
-└── _buttons: [b1, b2, b3]
+```mermaid
+classDiagram
+    class MouseDevice {
+        -MouseDriver _hid
+        -list _buttons
+        +start() bool
+        +start_advertising() bool
+        +click(button)
+        +press(button)
+        +release(button)
+        +move(x, y)
+        +scroll(steps)
+        +is_connected() bool
+    }
 ```
 
 ## 核心方法

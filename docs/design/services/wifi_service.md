@@ -6,13 +6,25 @@
 
 ## 类结构
 
-```
-WiFiService
-├── _wlan: network.WLAN
-├── _socket: socket (服务器)
-├── _client: socket (客户端)
-├── _msg_queue: MessageQueue
-└── _connected: bool
+```mermaid
+classDiagram
+    class WiFiService {
+        -network.WLAN _wlan
+        -socket _socket
+        -socket _client
+        -MessageQueue _msg_queue
+        -bool _connected
+        +start() bool
+        +connect() bool
+        +reconnect() bool
+        +is_connected() bool
+        +get_ip() tuple
+        +start_server() bool
+        +accept_client() bool
+        +recv_data(buffer_size) str
+        +send_data(data) bool
+        +close()
+    }
 ```
 
 ## 核心方法
@@ -39,30 +51,24 @@ WiFiService
 
 ## WiFi 连接流程
 
-```python
-WiFiService.start()
-  ↓
-wlan.active(True)
-  ↓
-wlan.connect(SSID, PASSWORD)
-  ↓
-轮询 isconnected() (超时：WIFI_TIMEOUT_SEC)
-  ↓
-_connected = True
+```mermaid
+flowchart TD
+    A[WiFiService.start()] --> B[wlan.active~True~]
+    B --> C[wlan.connect~SSID, PASSWORD~]
+    C --> D{轮询 isconnected~}
+    D -->|超时：WIFI_TIMEOUT_SEC| E[_connected = True]
 ```
 
 ## TCP 服务器流程
 
-```
-start_server()
-  ↓
-socket.bind(('0.0.0.0', 80))
-  ↓
-socket.listen(5)
-  ↓
-accept_client() → _client, addr = accept()
-  ↓
-recv_data() → data → publish("wifi/raw", msg)
+```mermaid
+flowchart TD
+    A[start_server~] --> B["socket.bind~'0.0.0.0', 80~"]
+    B --> C[socket.listen~5~]
+    C --> D[accept_client~]
+    D --> E["_client, addr = accept~"]
+    E --> F[recv_data~]
+    F --> G["data → publish~'wifi/raw', msg~"]
 ```
 
 ## 消息队列集成

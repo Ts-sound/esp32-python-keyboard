@@ -8,17 +8,38 @@
 
 ### HIDDriver (键盘)
 
-```
-HIDDriver
-├── _keyboard: HIDKeyboard
-└── _connected: bool
+```mermaid
+classDiagram
+    class HIDDriver {
+        -HIDKeyboard _keyboard
+        -bool _connected
+        +start() bool
+        +start_advertising() bool
+        +stop_advertising() bool
+        +send_keys(keys, modifiers) bool
+        +release_all() bool
+        +set_battery_level(level)
+        +notify_battery_level()
+        +is_connected() bool
+        -_setup_callbacks()
+        -_on_state_change()
+    }
 ```
 
 ### MouseDriver (鼠标)
 
-```
-MouseDriver
-└── _mouse: HIDMouse
+```mermaid
+classDiagram
+    class MouseDriver {
+        -HIDMouse _mouse
+        +start() bool
+        +start_advertising() bool
+        +set_buttons(b1, b2, b3)
+        +move(x, y, wheel)
+        +is_connected() bool
+        -_setup_callbacks()
+        -_on_state_change()
+    }
 ```
 
 ## HIDDriver 核心方法

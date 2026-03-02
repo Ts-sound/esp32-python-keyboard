@@ -6,129 +6,111 @@ ESP32 Python Keyboard 是一个基于 MicroPython 的 BLE HID 键盘系统，采
 
 ## 分层架构图
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        应用层 (app/)                             │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  keyboard_app.py - 应用入口，协调所有服务和设备            │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                        服务层 (services/)                        │
-│  ┌──────────────────────┐    ┌──────────────────────────────┐  │
-│  │  wifi_service.py     │    │  rf4_service.py              │  │
-│  │  - WiFi 连接管理       │    │  - RF4 自动按键               │  │
-│  │  - TCP 服务器         │    │  - JIG/PULL 模式             │  │
-│  │  - 客户端通信         │    │  - 消息队列控制              │  │
-│  └──────────────────────┘    └──────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                        设备层 (devices/)                         │
-│  ┌──────────────────────┐    ┌──────────────────────────────┐  │
-│  │  keyboard_device.py  │    │  mouse_device.py             │  │
-│  │  - 单键按下/释放       │    │  - 鼠标按钮控制              │  │
-│  │  - 多键无冲 (6 键)      │    │  - 鼠标移动/滚动             │  │
-│  │  - 字符串发送         │    │                              │  │
-│  └──────────────────────┘    └──────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                        驱动层 (drivers/)                         │
-│  ┌──────────────────────┐    ┌──────────────────────────────┐  │
-│  │  msg_queue.py        │    │  hid_driver.py               │  │
-│  │  - 发布/订阅消息队列   │    │  - HID 键盘/鼠标封装          │  │
-│  │  - 固定缓冲区防溢出   │    │  - 电池电量管理              │  │
-│  │                      │    │                              │  │
-│  │  led_driver.py       │    │                              │  │
-│  │  - LED 状态指示        │    │                              │  │
-│  └──────────────────────┘    └──────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                        配置层 (config/)                          │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  config.py - 统一配置管理                                 │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                        工具层 (utils/)                           │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  hid_mapper.py - HID 键码映射表                           │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                        硬件抽象层                                │
-│  ┌──────────────────────┐    ┌──────────────────────────────┐  │
-│  │  MicroPythonBLEHID   │    │  machine/network/socket      │  │
-│  │  (hid_services.py)   │    │  (MicroPython 内置)          │  │
-│  └──────────────────────┘    └──────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph App["应用层 (app/)"]
+        KA["keyboard_app.py<br/>应用入口，协调所有服务和设备"]
+    end
+    
+    subgraph Services["服务层 (services/)"]
+        WS["wifi_service.py<br/>WiFi 连接管理<br/>TCP 服务器<br/>客户端通信"]
+        RS["rf4_service.py<br/>RF4 自动按键<br/>JIG/PULL 模式<br/>消息队列控制"]
+    end
+    
+    subgraph Devices["设备层 (devices/)"]
+        KD["keyboard_device.py<br/>单键按下/释放<br/>多键无冲 (6 键)<br/>字符串发送"]
+        MD["mouse_device.py<br/>鼠标按钮控制<br/>鼠标移动/滚动"]
+    end
+    
+    subgraph Drivers["驱动层 (drivers/)"]
+        MQ["msg_queue.py<br/>发布/订阅消息队列<br/>固定缓冲区防溢出"]
+        HD["hid_driver.py<br/>HID 键盘/鼠标封装<br/>电池电量管理"]
+        LD["led_driver.py<br/>LED 状态指示"]
+    end
+    
+    subgraph Config["配置层 (config/)"]
+        CFG["config.py<br/>统一配置管理"]
+    end
+    
+    subgraph Utils["工具层 (utils/)"]
+        HM["hid_mapper.py<br/>HID 键码映射表"]
+    end
+    
+    subgraph Hardware["硬件抽象层"]
+        MPH["MicroPythonBLEHID<br/>(hid_services.py)"]
+        NATIVE["machine/network/socket<br/>(MicroPython 内置)"]
+    end
+    
+    App --> Services
+    Services --> Devices
+    Devices --> Drivers
+    Drivers --> Config
+    Config --> Utils
+    Utils --> Hardware
 ```
 
 ## 模块依赖关系
 
-```
-keyboard_app
-├── MessageQueue
-├── KeyboardDevice
-│   └── HIDDriver
-│       └── hid_services.Keyboard
-├── WiFiService
-│   └── network, socket
-└── RF4Service
-    └── KeyboardDevice
-
-HIDDriver
-├── hid_services
-└── HID_KEYMAP (utils/hid_mapper)
-
-MouseDriver
-└── hid_services.Mouse
+```mermaid
+flowchart LR
+    KA[keyboard_app] --> MQ[MessageQueue]
+    KA --> KD[KeyboardDevice]
+    KA --> WS[WiFiService]
+    KA --> RS[RF4Service]
+    
+    KD --> HD[HIDDriver]
+    HD --> HSK[hid_services.Keyboard]
+    HD --> HM[HID_KEYMAP]
+    
+    WS --> NET[network, socket]
+    
+    RS --> KD
+    
+    MD[MouseDriver] --> MSM[hid_services.Mouse]
 ```
 
 ## 数据流
 
 ### 1. WiFi 远程控制流程
 
-```
-客户端发送命令 → WiFiService.recv_data() 
-              → msg_queue.publish("wifi/raw", cmd)
-              → RF4Service._handle_command()
-              → KeyboardDevice.press/release()
-              → HIDDriver.send_keys()
-              → BLE 广播
+```mermaid
+sequenceDiagram
+    participant Client as 客户端
+    participant WS as WiFiService
+    participant MQ as MessageQueue
+    participant RS as RF4Service
+    participant KD as KeyboardDevice
+    participant HD as HIDDriver
+    participant BLE as BLE 广播
+    
+    Client->>WS: 发送命令
+    WS->>MQ: publish("wifi/raw", cmd)
+    MQ->>RS: _handle_command()
+    RS->>KD: press/release()
+    KD->>HD: send_keys()
+    HD->>BLE: 广播 HID 报告
 ```
 
 ### 2. HID 报告发送流程
 
-```
-应用层调用 press('a')
-  ↓
-KeyboardDevice._send_report()
-  ↓
-HIDDriver.send_keys([0x04])
-  ↓
-hid_services.set_keys(0x04)
-  ↓
-hid_services.notify_hid_report()
-  ↓
-BLE 广播 → 主机接收
+```mermaid
+flowchart TD
+    A["press('a')"] --> B["KeyboardDevice._send_report()"]
+    B --> C["HIDDriver.send_keys([0x04])"]
+    C --> D["hid_services.set_keys(0x04)"]
+    D --> E["hid_services.notify_hid_report()"]
+    E --> F["BLE 广播"]
+    F --> G["主机接收"]
 ```
 
 ### 3. 消息队列流程
 
-```
-发布者 (WiFiService)
-  ↓ publish("topic", msg)
-MessageQueue
-  ├─→ 加入队列 (poll 可获取)
-  └─→ invoke_subscribers()
-       ↓
-       订阅者回调 (RF4Service)
+```mermaid
+flowchart TD
+    Pub[发布者<br/>WiFiService] -->|publish| MQ[MessageQueue]
+    MQ --> Q[加入队列<br/>poll 可获取]
+    MQ --> Sub[invoke_subscribers]
+    Sub --> CB[订阅者回调<br/>RF4Service]
 ```
 
 ## 状态管理

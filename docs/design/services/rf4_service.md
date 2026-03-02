@@ -6,36 +6,79 @@
 
 ## 类结构
 
-```
-RF4Service
-├── _keyboard: KeyboardDevice
-├── _msg_queue: MessageQueue
-├── _state: RF4State (IDLE/JIG/PULL)
-├── _time_press: int (ms)
-└── _time_release: int (ms)
+```mermaid
+classDiagram
+    class RF4Service {
+        -KeyboardDevice _keyboard
+        -MessageQueue _msg_queue
+        -RF4State _state
+        -int _time_press
+        -int _time_release
+        +run()
+        +_handle_command(msg)
+        +_jig_cycle()
+        +_pull_cycle()
+        +set_state(state, press_ms, release_ms)
+        +stop()
+    }
+    class RF4State {
+        <<enumeration>>
+        IDLE
+        JIG
+        PULL
+    }
+    RF4Service --> RF4State
 ```
 
 ## 运行模式
 
 ### JIG 模式
+
 自动按压分号键 (`;`)：
-```
-press(';') → sleep(press_ms) → release(';') → sleep(release_ms)
+
+```mermaid
+flowchart LR
+    A["press~';'~"] --> B["sleep~press_ms~"]
+    B --> C["release~';'~"]
+    C --> D["sleep~release_ms~"]
+    D --> A
 ```
 
 ### PULL 模式
+
 自动按压分号和单引号键 (`;` + `'`)：
-```
-press(';') + press("'") → sleep(press_ms) → release("'") → sleep(release_ms)
+
+```mermaid
+flowchart LR
+    A["press~';'~ + press~\"'\"~"] --> B["sleep~press_ms~"]
+    B --> C["release~\"'\"~"]
+    C --> D["sleep~release_ms~"]
+    D --> A
 ```
 
-## 状态枚举
+## 状态转换
 
-```python
-class RF4State:
-    IDLE = 0   # 停止
-    JIG = 1    # JIG 模式
-    PULL = 2   # PULL 模式
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    
+    IDLE --> JIG : jig;press_ms;release_ms
+    JIG --> IDLE : clear
+    JIG --> JIG : _jig_cycle()
+    
+    IDLE --> PULL : pull;press_ms;release_ms
+    PULL --> IDLE : clear
+    PULL --> PULL : _pull_cycle()
+    
+    note right of JIG
+        自动按压分号键
+        press_ms / release_ms
+    end note
+    
+    note right of PULL
+        自动按压分号 + 单引号
+        press_ms / release_ms
+    end note
 ```
 
 ## 核心方法

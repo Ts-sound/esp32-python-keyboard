@@ -6,10 +6,16 @@
 
 ## 类结构
 
-```
-MessageQueue
-├── _queue: deque (maxlen=max_size)
-└── _subscribers: dict {topic: [callbacks]}
+```mermaid
+classDiagram
+    class MessageQueue {
+        -deque _queue
+        -dict _subscribers
+        +publish(topic, msg) bool
+        +subscribe(topic, callback) bool
+        +poll(timeout_ms) tuple
+        -_invoke_subscribers(topic, msg)
+    }
 ```
 
 ## 核心方法
@@ -37,15 +43,12 @@ Returns: `(topic, msg)` 或 `None`
 
 ## 发布/订阅流程
 
-```
-publisher.publish("wifi/raw", "jig;100;200")
-  ↓
-_queue.append(("wifi/raw", "jig;100;200"))
-  ↓
-_invoke_subscribers("wifi/raw", "jig;100;200")
-  ↓
-for callback in _subscribers["wifi/raw"]:
-    callback("jig;100;200")
+```mermaid
+flowchart TD
+    Pub["publisher.publish~'wifi/raw', 'jig;100;200'~"] --> A["_queue.append~...]
+    A --> B["_invoke_subscribers~'wifi/raw', 'jig;100;200'~"]
+    B --> C["for callback in _subscribers['wifi/raw']"]
+    C --> D["callback~'jig;100;200'~"]
 ```
 
 ## 通配符订阅

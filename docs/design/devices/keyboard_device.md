@@ -6,10 +6,23 @@
 
 ## 类结构
 
-```
-KeyboardDevice
-├── _hid: HIDDriver
-└── _pressed_keys: list
+```mermaid
+classDiagram
+    class KeyboardDevice {
+        -HIDDriver _hid
+        -list _pressed_keys
+        +start() bool
+        +start_advertising() bool
+        +stop_advertising() bool
+        +press(key) bool
+        +release(key) bool
+        +release_all() bool
+        +send_string(text) bool
+        +set_modifiers(**kwargs) bool
+        +set_battery_level(level)
+        +notify_battery_level()
+        +is_connected() bool
+    }
 ```
 
 ## 核心方法

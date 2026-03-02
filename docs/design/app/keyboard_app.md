@@ -6,13 +6,23 @@
 
 ## 类结构
 
-```
-KeyboardApp
-├── _msg_queue: MessageQueue
-├── _keyboard: KeyboardDevice
-├── _wifi: WiFiService
-├── _rf4: RF4Service
-└── _running: bool
+```mermaid
+classDiagram
+    class KeyboardApp {
+        -MessageQueue _msg_queue
+        -KeyboardDevice _keyboard
+        -WiFiService _wifi
+        -RF4Service _rf4
+        -bool _running
+        +init() bool
+        +start() bool
+        +run()
+        +stop()
+        +get_keyboard() KeyboardDevice
+        +get_wifi() WiFiService
+        +get_rf4() RF4Service
+        +get_msg_queue() MessageQueue
+    }
 ```
 
 ## 核心方法
@@ -49,21 +59,20 @@ Returns: `bool` - 是否成功
 
 ## 初始化流程
 
-```
-main.py
-  ↓
-KeyboardApp()
-  ↓
-app.start()
-  ├─→ app.init()
-  │   ├─→ MessageQueue(max_size=10)
-  │   ├─→ KeyboardDevice.start()
-  │   ├─→ WiFiService.start()
-  │   └─→ RF4Service(keyboard, msg_queue)
-  │
-  ├─→ KeyboardDevice.start_advertising()
-  ├─→ WiFiService.connect()
-  └─→ WiFiService.start_server()
+```mermaid
+flowchart TD
+    Main[main.py] --> App[KeyboardApp]
+    App --> Start[app.start()]
+    Start --> Init[app.init()]
+    
+    Init --> MQ[MessageQueue~max_size=10~]
+    Init --> KB[KeyboardDevice.start()]
+    Init --> WiFi[WiFiService.start()]
+    Init --> RF4[RF4Service~keyboard, msg_queue~]
+    
+    Start --> Adv[KeyboardDevice.start_advertising()]
+    Start --> Conn[WiFiService.connect()]
+    Conn --> Srv[WiFiService.start_server()]
 ```
 
 ## 主循环

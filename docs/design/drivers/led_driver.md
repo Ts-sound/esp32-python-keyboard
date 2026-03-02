@@ -6,9 +6,17 @@
 
 ## 类结构
 
-```
-LEDDriver
-└── _pin: machine.Pin
+```mermaid
+classDiagram
+    class LEDDriver {
+        -machine.Pin _pin
+        -int _state
+        +on()
+        +off()
+        +toggle()
+        +blink(count, interval_ms)
+        +heartbeat(interval_ms)
+    }
 ```
 
 ## 核心方法
