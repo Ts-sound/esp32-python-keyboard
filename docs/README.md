@@ -7,7 +7,7 @@ ESP32 Python Keyboard 是一个基于 MicroPython 的 BLE HID 键盘系统，采
 ## 分层架构图
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph App["应用层 (app/)"]
         KA["keyboard_app.py<br/>应用入口，协调所有服务和设备"]
     end
