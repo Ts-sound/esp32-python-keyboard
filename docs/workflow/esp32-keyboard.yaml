@@ -1,9 +1,9 @@
 scenario: project_init
 project_name: esp32-keyboard
 created: '2026-03-02T02:53:27.636961'
-updated: '2026-03-02T03:05:44.723449'
+updated: '2026-03-02T03:05:52.695375'
 current_stage: 5
-status: completed
+status: archived
 stages:
 - id: 1
   name: project-structure
