@@ -1,0 +1,42 @@
+scenario: project_init
+project_name: esp32-keyboard
+created: '2026-03-02T02:53:27.636961'
+updated: '2026-03-02T02:55:07.949195'
+current_stage: 2
+status: active
+stages:
+- id: 1
+  name: project-structure
+  skill: project-structure
+  status: completed
+  started_at: null
+  completed_at: '2026-03-02T02:55:07.949158'
+  output: null
+- id: 2
+  name: brainstorming
+  skill: brainstorming
+  status: in_progress
+  started_at: '2026-03-02T02:55:07.949185'
+  completed_at: null
+  output: null
+- id: 3
+  name: project-docs
+  skill: project-docs
+  status: pending
+  started_at: null
+  completed_at: null
+  output: null
+- id: 4
+  name: writing-plans
+  skill: writing-plans
+  status: pending
+  started_at: null
+  completed_at: null
+  output: null
+- id: 5
+  name: project-task
+  skill: project-task
+  status: pending
+  started_at: null
+  completed_at: null
+  output: null

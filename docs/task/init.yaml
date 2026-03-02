@@ -1,0 +1,69 @@
+# ESP32 Keyboard 初始化任务清单
+scenario: project_init
+project_name: esp32-keyboard
+created: "2026-03-02"
+status: in_progress
+
+tasks:
+  - id: 1
+    name: 项目结构
+    status: completed
+    items:
+      - "创建 scripts/ 目录"
+      - "创建 config/ 目录"
+      - "创建 .github/workflows/ 目录"
+      - "编写 setup.sh"
+      - "编写 test.sh"
+      - "编写 build.sh"
+      - "编写 upload.sh"
+      - "编写 requirements.txt"
+      - "配置 CI/CD (ci.yml)"
+
+  - id: 2
+    name: 设计文档
+    status: completed
+    items:
+      - "架构设计文档 (architecture/README.md)"
+      - "应用层文档 (app/keyboard_app.md)"
+      - "服务层文档 (services/*.md)"
+      - "设备层文档 (devices/*.md)"
+      - "驱动层文档 (drivers/*.md)"
+      - "配置层文档 (config/config.md)"
+      - "工具层文档 (utils/hid_mapper.md)"
+      - "协议文档 (protocols/wifi_command.md)"
+
+  - id: 3
+    name: 实现计划
+    status: completed
+    items:
+      - "创建 docs/plan/2026-03-02-init-plan.md"
+
+  - id: 4
+    name: 任务清单
+    status: completed
+    items:
+      - "创建 docs/task/init.yaml"
+
+后续任务:
+  高优先级:
+    - "添加更多单元测试"
+    - "完善错误处理"
+    - "优化 BLE 连接稳定性"
+
+  中优先级:
+    - "实现宏录制功能"
+    - "添加多设备切换"
+    - "Web 控制界面原型"
+
+  低优先级:
+    - "USB 有线模式支持"
+    - "OLED 显示屏支持"
+    - "固件 OTA 升级"
+
+验证清单:
+  - "所有文档链接有效"
+  - "代码可以正常编译上传"
+  - "单元测试通过"
+  - "BLE 键盘可以正常连接"
+  - "WiFi 远程控制可用"
+  - "RF4 自动按键可用"

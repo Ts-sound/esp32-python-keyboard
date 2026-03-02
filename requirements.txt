@@ -1,0 +1,7 @@
+# Test dependencies (for running tests on PC)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# ESP32 tools
+mpfshell-lite>=2.0.0
+esptool>=4.0.0
