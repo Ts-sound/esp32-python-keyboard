@@ -1,0 +1,3 @@
+[submodule "lib/MicroPythonBLEHID"]
+	path = lib/MicroPythonBLEHID
+	url = https://github.com/Heerkog/MicroPythonBLEHID.git

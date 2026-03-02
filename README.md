@@ -1,3 +1,175 @@
-# esp32-python-keyboard
+# ESP32 Python Keyboard
 
-https://micropython.org/download/ESP32_GENERIC/
+基于 MicroPython 的 ESP32 BLE HID 键盘，支持 WiFi 远程控制和自动按键功能。
+
+## 功能特性
+
+- **BLE HID 键盘**: 作为蓝牙键盘连接到手机/电脑
+- **BLE HID 鼠标**: 支持鼠标模式
+- **WiFi 控制**: 通过 TCP 接收远程命令
+- **RF4 自动按键**: 支持 JIG 和 PULL 两种自动按键模式
+- **消息队列**: 模块间通信的发布/订阅机制
+
+## 项目结构
+
+```
+esp32-python-keyboard/
+├── lib/                           # 外部依赖
+│   └── hid_services.py            # MicroPythonBLEHID 库
+│
+├── src/                           # 源代码
+│   ├── main.py                    # 应用入口
+│   ├── boot.py                    # 启动配置
+│   ├── app/                       # 应用层
+│   │   └── keyboard_app.py        # 键盘应用逻辑
+│   ├── services/                  # 服务层
+│   │   ├── wifi_service.py        # WiFi 服务
+│   │   └── rf4_service.py         # RF4 服务
+│   ├── devices/                   # 设备层
+│   │   ├── keyboard_device.py     # 键盘设备
+│   │   └── mouse_device.py        # 鼠标设备
+│   ├── drivers/                   # 驱动层
+│   │   ├── msg_queue.py           # 消息队列
+│   │   ├── hid_driver.py          # HID 驱动封装
+│   │   └── led_driver.py          # LED 驱动
+│   ├── config/                    # 配置层
+│   │   └── config.py              # 统一配置
+│   └── utils/                     # 工具函数
+│       └── hid_mapper.py          # HID 键码映射
+│
+├── tests/                         # 单元测试
+│   ├── test_msg_queue.py
+│   ├── test_keyboard_device.py
+│   └── test_hid_mapper.py
+│
+├── docs/                          # 文档
+│   └── design/                    # 设计文档
+│
+├── examples/                      # 示例代码
+├── DEPENDENCIES.md                # 依赖说明
+└── README.md
+```
+
+## 快速开始
+
+### 1. 烧录 MicroPython 固件
+
+```bash
+# 擦除 Flash
+esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash
+
+# 烧录固件
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 \
+    write_flash -z 0x1000 ESP32_GENERIC-20240602-v1.23.0.bin
+```
+
+### 2. 上传代码
+
+```bash
+# 使用 mpfshell
+mpfshell -c "open /dev/ttyUSB0" \
+    -c "mput -r lib/" \
+    -c "mput -r src/config/" \
+    -c "mput -r src/drivers/" \
+    -c "mput -r src/devices/" \
+    -c "mput -r src/services/" \
+    -c "mput -r src/app/" \
+    -c "mput -r src/utils/" \
+    -c "mput src/main.py" \
+    -c "mput src/boot.py"
+```
+
+### 3. 配置 WiFi
+
+编辑 `src/config/config.py`，修改 WiFi 凭据：
+
+```python
+WIFI_SSID = "你的 WiFi 名称"
+WIFI_PASSWORD = "你的 WiFi 密码"
+```
+
+### 4. 运行
+
+重启 ESP32，LED 闪烁表示启动成功。
+
+## WiFi 控制协议
+
+### 连接
+
+- **地址**: `tcp://<ESP32_IP>:80`
+- **格式**: 纯文本命令
+
+### 命令格式
+
+```
+# RF4 控制
+jig;press_ms;release_ms     # JIG 模式
+pull;press_ms;release_ms    # PULL 模式
+clear                       # 停止自动按键
+
+# 键盘控制
+shift;a                     # Shift+A
+ctrl;s                      # Ctrl+S
+enter                       # 回车键
+```
+
+## 配置说明
+
+主要配置项位于 `src/config/config.py`：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `WIFI_SSID` | "T" | WiFi 名称 |
+| `WIFI_PASSWORD` | "12345678" | WiFi 密码 |
+| `RF4_JIG_PRESS_MS` | 1135 | JIG 按压时间 (ms) |
+| `RF4_JIG_RELEASE_MS` | 1985 | JIG 释放时间 (ms) |
+| `HID_DEVICE_NAME` | "ESP32-Keyboard" | BLE 设备名称 |
+
+## 测试
+
+### 单元测试（PC 上运行）
+
+```bash
+cd tests
+python -m pytest test_msg_queue.py
+python -m pytest test_keyboard_device.py
+python -m pytest test_hid_mapper.py
+```
+
+### 手动测试（ESP32 上）
+
+1. 连接 BLE 设备
+2. 测试键盘输入
+3. 发送 WiFi 命令验证
+
+## 依赖
+
+- **MicroPythonBLEHID**: https://github.com/Heerkog/MicroPythonBLEHID.git
+- **MicroPython**: v1.18+ (推荐 v1.23+)
+
+详见 [DEPENDENCIES.md](DEPENDENCIES.md)
+
+## 开发
+
+### 目录说明
+
+- `src/config/` - 配置模块
+- `src/drivers/` - 硬件驱动
+- `src/devices/` - HID 设备封装
+- `src/services/` - 业务服务
+- `src/app/` - 应用逻辑
+
+### 添加新功能
+
+1. 在对应层创建模块
+2. 更新 `__init__.py`
+3. 添加测试用例
+4. 更新文档
+
+## 许可证
+
+项目代码采用 GPL-3.0 许可证（与 MicroPythonBLEHID 保持一致）。
+
+## 致谢
+
+- [MicroPythonBLEHID](https://github.com/Heerkog/MicroPythonBLEHID.git) - BLE HID 服务库
