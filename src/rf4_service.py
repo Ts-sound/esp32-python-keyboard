@@ -8,7 +8,7 @@ RF4 服务
 import time
 import random
 
-from config.config import (
+from config import (
     RF4_JIG_PRESS_MS,
     RF4_JIG_RELEASE_MS,
     RF4_PULL_PRESS_MS,

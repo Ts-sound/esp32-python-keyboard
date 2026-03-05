@@ -5,12 +5,10 @@
 支持多键无冲和字符串发送。
 """
 
-import sys
 import time
 
-sys.path.append('../drivers')
 from hid_driver import HIDDriver
-from utils.hid_mapper import HID_KEYMAP
+from hid_mapper import HID_KEYMAP
 
 
 class KeyboardDevice:

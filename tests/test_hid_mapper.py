@@ -8,7 +8,7 @@ import unittest
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../src/utils'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../src'))
 
 from hid_mapper import HID_KEYMAP, HID_MODIFIERS, get_hid_code, get_modifier_code, parse_key_string
 

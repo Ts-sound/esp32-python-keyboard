@@ -4,10 +4,8 @@
 提供高级鼠标 API，封装 HID 驱动。
 """
 
-import sys
 import time
 
-sys.path.append('../drivers')
 from hid_driver import MouseDriver
 
 

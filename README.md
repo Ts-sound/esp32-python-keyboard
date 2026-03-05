@@ -17,25 +17,18 @@ esp32-python-keyboard/
 ├── lib/                           # 外部依赖
 │   └── hid_services.py            # MicroPythonBLEHID 库
 │
-├── src/                           # 源代码
+├── src/                           # 源代码（扁平结构）
 │   ├── main.py                    # 应用入口
-│   ├── boot.py                    # 启动配置
-│   ├── app/                       # 应用层
-│   │   └── keyboard_app.py        # 键盘应用逻辑
-│   ├── services/                  # 服务层
-│   │   ├── wifi_service.py        # WiFi 服务
-│   │   └── rf4_service.py         # RF4 服务
-│   ├── devices/                   # 设备层
-│   │   ├── keyboard_device.py     # 键盘设备
-│   │   └── mouse_device.py        # 鼠标设备
-│   ├── drivers/                   # 驱动层
-│   │   ├── msg_queue.py           # 消息队列
-│   │   ├── hid_driver.py          # HID 驱动封装
-│   │   └── led_driver.py          # LED 驱动
-│   ├── config/                    # 配置层
-│   │   └── config.py              # 统一配置
-│   └── utils/                     # 工具函数
-│       └── hid_mapper.py          # HID 键码映射
+│   ├── config.py                  # 统一配置
+│   ├── keyboard_app.py            # 键盘应用逻辑
+│   ├── keyboard_device.py         # 键盘设备
+│   ├── mouse_device.py            # 鼠标设备
+│   ├── hid_driver.py              # HID 驱动封装
+│   ├── led_driver.py              # LED 驱动
+│   ├── msg_queue.py               # 消息队列
+│   ├── wifi_service.py            # WiFi 服务
+│   ├── rf4_service.py             # RF4 服务
+│   └── hid_mapper.py              # HID 键码映射
 │
 ├── tests/                         # 单元测试
 │   ├── test_msg_queue.py
@@ -69,19 +62,12 @@ esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 \
 # 使用 mpfshell
 mpfshell -c "open /dev/ttyUSB0" \
     -c "mput -r lib/" \
-    -c "mput -r src/config/" \
-    -c "mput -r src/drivers/" \
-    -c "mput -r src/devices/" \
-    -c "mput -r src/services/" \
-    -c "mput -r src/app/" \
-    -c "mput -r src/utils/" \
-    -c "mput src/main.py" \
-    -c "mput src/boot.py"
+    -c "mput src/" \
 ```
 
 ### 3. 配置 WiFi
 
-编辑 `src/config/config.py`，修改 WiFi 凭据：
+编辑 `src/config.py`，修改 WiFi 凭据：
 
 ```python
 WIFI_SSID = "你的 WiFi 名称"
@@ -115,7 +101,7 @@ enter                       # 回车键
 
 ## 配置说明
 
-主要配置项位于 `src/config/config.py`：
+主要配置项位于 `src/config.py`：
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
@@ -153,11 +139,11 @@ python -m pytest test_hid_mapper.py
 
 ### 目录说明
 
-- `src/config/` - 配置模块
-- `src/drivers/` - 硬件驱动
-- `src/devices/` - HID 设备封装
-- `src/services/` - 业务服务
-- `src/app/` - 应用逻辑
+- `src/config.py` - 配置模块
+- `src/keyboard_device.py` / `src/mouse_device.py` - HID 设备封装
+- `src/hid_driver.py` / `src/led_driver.py` / `src/msg_queue.py` - 驱动层
+- `src/wifi_service.py` / `src/rf4_service.py` - 业务服务
+- `src/keyboard_app.py` - 应用逻辑
 
 ### 添加新功能
 

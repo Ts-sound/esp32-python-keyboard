@@ -6,14 +6,14 @@
 
 import time
 
-from config.config import (
+from config import (
     HID_ADVERTISING_TIMEOUT_SEC,
     MAIN_LOOP_INTERVAL_MS,
 )
-from devices.keyboard_device import KeyboardDevice
-from services.rf4_service import RF4Service
-from services.wifi_service import WiFiService
-from drivers.msg_queue import MessageQueue
+from keyboard_device import KeyboardDevice
+from rf4_service import RF4Service
+from wifi_service import WiFiService
+from msg_queue import MessageQueue
 
 
 class KeyboardApp:

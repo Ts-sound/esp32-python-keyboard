@@ -10,7 +10,7 @@ from unittest.mock import Mock, MagicMock, patch
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../src/devices'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../src'))
 
 from hid_mapper import HID_KEYMAP
 

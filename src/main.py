@@ -7,8 +7,8 @@ ESP32 Keyboard 主入口
 from machine import Pin
 import time
 
-from config.config import LED_PIN, LED_BLINK_COUNT, LED_BLINK_INTERVAL_MS
-from app.keyboard_app import KeyboardApp
+from config import LED_PIN, LED_BLINK_COUNT, LED_BLINK_INTERVAL_MS
+from keyboard_app import KeyboardApp
 
 
 def blink_led(count=LED_BLINK_COUNT, interval_ms=LED_BLINK_INTERVAL_MS):

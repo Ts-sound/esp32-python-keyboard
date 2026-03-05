@@ -7,7 +7,6 @@ HID 驱动封装
 
 import sys
 
-sys.path.append('../lib/MicroPythonBLEHID')
 from hid_services import Keyboard as HIDKeyboard
 from hid_services import Mouse as HIDMouse
 

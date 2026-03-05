@@ -9,7 +9,7 @@ import network
 import socket
 import time
 
-from config.config import (
+from config import (
     WIFI_SSID,
     WIFI_PASSWORD,
     WIFI_PORT,

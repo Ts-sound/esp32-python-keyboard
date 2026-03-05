@@ -10,7 +10,7 @@ from unittest.mock import Mock
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../src/drivers'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../src'))
 
 from msg_queue import MessageQueue
 
