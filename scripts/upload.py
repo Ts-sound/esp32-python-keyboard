@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""ESP32 Python Keyboard - Upload Code to ESP32
-
+"""ESP32 Python Keyboard - Upload Code to ESP32 using mpremote
+Supports recursive upload with force overwrite (cp -rf)
+Only update specified files (lib/MicroPythonBLEHID/hid_services.py)
+Do NOT overwrite /boot.py on device
 Usage:
     python upload.py [port]
     
@@ -12,88 +14,89 @@ Examples:
 import subprocess
 import sys
 import os
+import platform
 
 
-def run_mpfshell(port, commands):
-    """Run mpfshell commands"""
-    esptool = "mpfshell.exe" if sys.platform == "win32" else "mpfshell"
+def run_mpremote_command(port, command):
+    """
+    Execute a single mpremote command on the specified serial port
     
-    cmd = [esptool, "-c", f"open {port}"]
+    Args:
+        port (str): Serial port identifier (e.g., COM3, /dev/ttyUSB0)
+        command (str): mpremote subcommand to execute (e.g., "cp -rf src :/src")
     
-    for cmd_str in commands:
-        cmd.extend(["-c", cmd_str])
+    Returns:
+        int: Return code from the subprocess call (0 = success, non-zero = error)
+    """
+    mpremote_cmd = ["mpremote", "connect", port] + command.split()
     
-    print(f"Running mpfshell on {port}...")
-    result = subprocess.run(cmd)
+    print(f"Executing: {' '.join(mpremote_cmd)}")
+    result = subprocess.run(
+        mpremote_cmd,
+        capture_output=True,
+        text=True
+    )
+    
+    # Print errors only (suppress normal info output)
+    if result.stderr:
+        print(f"Error: {result.stderr.strip()}")
+    
     return result.returncode
 
 
 def main():
-    print("=== Uploading Code to ESP32 ===")
+    print("=== Uploading Code to ESP32 (mpremote - recursive force overwrite) ===")
     
-    # Get port from argument or use default
-    port = sys.argv[1] if len(sys.argv) > 1 else "COM3"
+    # Get serial port (default: Windows=COM3, Linux/Mac=/dev/ttyUSB0)
+    default_port = "COM3" if platform.system() == "Windows" else "/dev/ttyUSB0"
+    port = sys.argv[1] if len(sys.argv) > 1 else default_port
     
-    print(f"Port: {port}")
+    print(f"Target Port: {port}")
     print()
     
-    # Check if mpfshell is available
-    mpfshell = "mpfshell.exe" if sys.platform == "win32" else "mpfshell"
+    # Check if mpremote is installed
     try:
-        subprocess.run([mpfshell, "--version"], capture_output=True)
-    except FileNotFoundError:
-        print(f"Error: {mpfshell} not found. Run python scripts/setup.py first")
+        subprocess.run(
+            ["mpremote", "--version"],
+            capture_output=True,
+            check=True
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        print("Error: mpremote not found. Please install it first with:")
+        print("pip install mpremote")
         sys.exit(1)
     
-    # Build upload commands
-    commands = [
-        "mkdir lib",
-        "mkdir src",
-        "mkdir src/config",
-        "mkdir src/drivers",
-        "mkdir src/devices",
-        "mkdir src/services",
-        "mkdir src/app",
-        "mkdir src/utils",
-    ]
+    # Step 1: Upload specified files with force overwrite
+    print("\n=== Uploading specified files (force overwrite) ===")
+    upload_errors = False
     
-    # Add file upload commands
-    if os.path.exists("lib/hid_services.py"):
-        commands.append("mput lib/hid_services.py lib/")
+    # 1. Only update lib/MicroPythonBLEHID/hid_services.py
+    hid_service_file = "lib/MicroPythonBLEHID/hid_services.py"
+    if os.path.exists(hid_service_file):
+        run_mpremote_command(port, "fs mkdir /lib/MicroPythonBLEHID")
+        rc = run_mpremote_command(port, f"cp -f {hid_service_file} :/lib/MicroPythonBLEHID/hid_services.py")
+        if rc != 0:
+            upload_errors = True
+    else:
+        print(f"Warning: {hid_service_file} not found, skip uploading this file")
     
-    if os.path.exists("src/config"):
-        commands.append("mput src/config/*.py src/config/")
+    # 2. Upload src directory (recursive + force overwrite)
+    if os.path.exists("src"):
+        rc = run_mpremote_command(port, "cp -rf src :/src")
+        if rc != 0:
+            upload_errors = True
     
-    if os.path.exists("src/drivers"):
-        commands.append("mput src/drivers/*.py src/drivers/")
-    
-    if os.path.exists("src/devices"):
-        commands.append("mput src/devices/*.py src/devices/")
-    
-    if os.path.exists("src/services"):
-        commands.append("mput src/services/*.py src/services/")
-    
-    if os.path.exists("src/app"):
-        commands.append("mput src/app/*.py src/app/")
-    
-    if os.path.exists("src/utils"):
-        commands.append("mput src/utils/*.py src/utils/")
-    
-    if os.path.exists("src/main.py"):
-        commands.append("mput src/main.py")
-    
-    if os.path.exists("src/boot.py"):
-        commands.append("mput src/boot.py")
-    
-    # Execute upload
-    return_code = run_mpfshell(port, commands)
-    
-    if return_code != 0:
-        print(f"\nError: Upload failed with code {return_code}")
+    # Step 2: Final status check
+    if upload_errors:
+        print("\n=== Upload Completed with Errors! ===")
         sys.exit(1)
-    
-    print("\n=== Upload Complete! ===")
-    print("ESP32 will restart automatically")
+    else:
+        print("\n=== Upload Complete! ===")
+        print("1. lib/MicroPythonBLEHID/hid_services.py updated (force overwrite)")
+        print("2. src directory uploaded recursively (force overwrite)")
+        print("3. /boot.py on device is NOT modified")
+        print("Restarting ESP32...")
+        run_mpremote_command(port, "reset")
 
 
 if __name__ == "__main__":
