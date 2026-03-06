@@ -6,6 +6,7 @@ Provides unified error handling and status checking.
 """
 
 import sys
+import time
 
 from hid_services import Keyboard as HIDKeyboard
 from hid_services import Mouse as HIDMouse
@@ -46,8 +47,24 @@ class HIDDriver:
             bool: Success status
         """
         try:
+            # Wait for BLE hardware to be ready
+            time.sleep_ms(500)
             self._keyboard.start()
             return True
+        except OSError as e:
+            if e.errno == 116:  # ETIMEDOUT
+                print("[WARN] BLE init timeout, retrying...")
+                time.sleep_ms(1000)
+                try:
+                    self._keyboard.start()
+                    return True
+                except Exception as e:
+                    print(f"[ERROR] HIDDriver.start: {e}")
+                    sys.print_exception(e)
+                    return False
+            print(f"[ERROR] HIDDriver.start: {e}")
+            sys.print_exception(e)
+            return False
         except Exception as e:
             print(f"[ERROR] HIDDriver.start: {e}")
             sys.print_exception(e)
@@ -184,9 +201,21 @@ class MouseDriver:
     def start(self):
         """Start mouse service"""
         try:
+            # Wait for BLE hardware to be ready
+            time.sleep_ms(500)
             self._mouse.start()
             return True
-        except Exception as e:
+        except OSError as e:
+            if e.errno == 116:  # ETIMEDOUT
+                print("[WARN] BLE init timeout, retrying...")
+                time.sleep_ms(1000)
+                try:
+                    self._mouse.start()
+                    return True
+                except Exception as e:
+                    print(f"[ERROR] MouseDriver.start: {e}")
+                    sys.print_exception(e)
+                    return False
             print(f"[ERROR] MouseDriver.start: {e}")
             sys.print_exception(e)
             return False
