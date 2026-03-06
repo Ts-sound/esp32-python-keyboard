@@ -2,9 +2,9 @@
 """ESP32 Python Keyboard - Upload Code to ESP32 using mpremote
 Supports recursive upload with force overwrite (cp -rf)
 Uploads:
-  - src/ directory (including boot.py, main.py, etc.)
+  - boot.py (to device root /boot.py)
+  - src/ directory (main.py and all modules)
   - lib/MicroPythonBLEHID/hid_services.py
-Does NOT overwrite /boot.py on device (already handled by src/boot.py)
 Usage:
     python upload.py [port]
     
@@ -72,15 +72,23 @@ def main():
     print("\n=== Uploading files (force overwrite) ===")
     upload_errors = False
     
-    # 1. Upload src directory (recursive + force overwrite)
-    # This includes boot.py, main.py, and all other modules
+    # 1. Upload boot.py to device root
+    if os.path.exists("boot.py"):
+        print("Uploading boot.py...")
+        rc = run_mpremote_command(port, "cp -f boot.py :/boot.py")
+        if rc != 0:
+            upload_errors = True
+    else:
+        print("Warning: boot.py not found, skip uploading this file")
+    
+    # 2. Upload src directory (excluding boot.py)
     if os.path.exists("src"):
         print("Uploading src/ directory...")
         rc = run_mpremote_command(port, "cp -rf src :/")
         if rc != 0:
             upload_errors = True
     
-    # 2. Upload lib/MicroPythonBLEHID/hid_services.py
+    # 3. Upload lib/MicroPythonBLEHID/hid_services.py
     hid_service_file = "lib/MicroPythonBLEHID/hid_services.py"
     if os.path.exists(hid_service_file):
         print(f"Uploading {hid_service_file}...")
@@ -97,8 +105,9 @@ def main():
         sys.exit(1)
     else:
         print("\n=== Upload Complete! ===")
-        print("1. src/ directory uploaded (boot.py, main.py, all modules)")
-        print("2. lib/MicroPythonBLEHID/hid_services.py updated")
+        print("1. boot.py uploaded to device root")
+        print("2. src/ directory uploaded (main.py, all modules)")
+        print("3. lib/MicroPythonBLEHID/hid_services.py updated")
         print("Restarting ESP32...")
         run_mpremote_command(port, "reset")
 

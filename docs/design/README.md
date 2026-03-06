@@ -174,17 +174,18 @@ except Exception as e:
 ## 项目结构
 
 ```
-src/
-├── boot.py              # ESP32 启动脚本
-├── main.py              # 应用入口
-├── config.py            # 统一配置
-├── keyboard_app.py      # 应用协调器
-├── keyboard_device.py   # 键盘设备
-├── mouse_device.py      # 鼠标设备
-├── hid_driver.py        # HID 驱动
-├── led_driver.py        # LED 驱动
-├── msg_queue.py         # 消息队列
-├── wifi_service.py      # WiFi 服务
-├── rf4_service.py       # RF4 服务
-└── hid_mapper.py        # HID 映射表
+esp32-python-keyboard/
+├── boot.py              # ESP32 启动脚本（设备根目录）
+├── src/
+│   ├── main.py          # 应用入口
+│   ├── config.py        # 统一配置
+│   ├── keyboard_app.py  # 应用协调器
+│   ├── keyboard_device.py   # 键盘设备
+│   ├── mouse_device.py      # 鼠标设备
+│   ├── hid_driver.py        # HID 驱动
+│   ├── led_driver.py        # LED 驱动
+│   ├── msg_queue.py         # 消息队列
+│   ├── wifi_service.py      # WiFi 服务
+│   ├── rf4_service.py       # RF4 服务
+│   └── hid_mapper.py        # HID 映射表
 ```
