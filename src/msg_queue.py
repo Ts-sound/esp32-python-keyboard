@@ -31,7 +31,7 @@ class MessageQueue:
         Args:
             max_size: 队列最大长度（默认 10）
         """
-        self._queue = deque(max_size)
+        self._queue = deque((), max_size)
         self._subscribers = {}
     
     def publish(self, topic, msg):
