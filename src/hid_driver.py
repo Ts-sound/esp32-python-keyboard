@@ -1,8 +1,8 @@
 """
-HID 驱动封装
+HID Driver Wrapper
 
-封装外部 MicroPythonBLEHID 库的 hid_services 模块。
-提供统一的错误处理和状态检查。
+Encapsulates the hid_services module from MicroPythonBLEHID library.
+Provides unified error handling and status checking.
 """
 
 import sys
@@ -13,37 +13,37 @@ from hid_services import Mouse as HIDMouse
 
 class HIDDriver:
     """
-    HID 驱动封装类
+    HID Driver Wrapper Class
     
-    封装 BLE HID Keyboard 服务，提供简化的 API。
+    Encapsulates BLE HID Keyboard service with simplified API.
     """
     
     def __init__(self, device_name="ESP32-Keyboard"):
         """
-        初始化 HID 驱动
+        Initialize HID driver
         
         Args:
-            device_name: 设备名称
+            device_name: Device name
         """
         self._keyboard = HIDKeyboard(device_name)
         self._connected = False
         self._setup_callbacks()
     
     def _setup_callbacks(self):
-        """设置回调"""
+        """Setup callbacks"""
         self._keyboard.set_state_change_callback(self._on_state_change)
     
     def _on_state_change(self):
-        """状态变化回调"""
+        """State change callback"""
         state = self._keyboard.get_state()
         print(f"[INFO] HID state changed: {state}")
     
     def start(self):
         """
-        启动 HID 服务
+        Start HID service
         
         Returns:
-            bool: 是否启动成功
+            bool: Success status
         """
         try:
             self._keyboard.start()
@@ -55,10 +55,10 @@ class HIDDriver:
     
     def start_advertising(self):
         """
-        开始广播
+        Start advertising
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._keyboard.start_advertising()
@@ -70,10 +70,10 @@ class HIDDriver:
     
     def stop_advertising(self):
         """
-        停止广播
+        Stop advertising
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._keyboard.stop_advertising()
@@ -85,14 +85,14 @@ class HIDDriver:
     
     def send_keys(self, keys=None, modifiers=None):
         """
-        发送按键
+        Send keys
         
         Args:
-            keys: 按键码列表（最多 6 个）
-            modifiers: 修饰符字典
+            keys: List of key codes (max 6)
+            modifiers: Modifier dictionary
             
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._keyboard.set_keys()
@@ -112,10 +112,10 @@ class HIDDriver:
     
     def release_all(self):
         """
-        释放所有按键
+        Release all keys
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._keyboard.set_keys()
@@ -129,10 +129,10 @@ class HIDDriver:
     
     def set_battery_level(self, level):
         """
-        设置电池电量
+        Set battery level
         
         Args:
-            level: 电量百分比（0-100）
+            level: Battery percentage (0-100)
         """
         try:
             self._keyboard.set_battery_level(level)
@@ -141,7 +141,7 @@ class HIDDriver:
             sys.print_exception(e)
     
     def notify_battery_level(self):
-        """通知电池电量"""
+        """Notify battery level"""
         try:
             self._keyboard.notify_battery_level()
         except Exception as e:
@@ -150,39 +150,39 @@ class HIDDriver:
     
     def is_connected(self):
         """
-        检查是否已连接
+        Check connection status
         
         Returns:
-            bool: 连接状态
+            bool: Connection state
         """
         return self._keyboard.get_state() == HIDKeyboard.DEVICE_CONNECTED
 
 
 class MouseDriver:
     """
-    HID 鼠标驱动封装类
+    HID Mouse Driver Wrapper Class
     """
     
     def __init__(self, device_name="ESP32-Mouse"):
         """
-        初始化鼠标驱动
+        Initialize mouse driver
         
         Args:
-            device_name: 设备名称
+            device_name: Device name
         """
         self._mouse = HIDMouse(device_name)
         self._setup_callbacks()
     
     def _setup_callbacks(self):
-        """设置回调"""
+        """Setup callbacks"""
         self._mouse.set_state_change_callback(self._on_state_change)
     
     def _on_state_change(self):
-        """状态变化回调"""
+        """State change callback"""
         print(f"[INFO] Mouse state changed: {self._mouse.get_state()}")
     
     def start(self):
-        """启动鼠标服务"""
+        """Start mouse service"""
         try:
             self._mouse.start()
             return True
@@ -192,7 +192,7 @@ class MouseDriver:
             return False
     
     def start_advertising(self):
-        """开始广播"""
+        """Start advertising"""
         try:
             self._mouse.start_advertising()
             return True
@@ -203,12 +203,12 @@ class MouseDriver:
     
     def set_buttons(self, b1=0, b2=0, b3=0):
         """
-        设置鼠标按钮
+        Set mouse buttons
         
         Args:
-            b1: 左键（0/1）
-            b2: 中键（0/1）
-            b3: 右键（0/1）
+            b1: Left button (0/1)
+            b2: Middle button (0/1)
+            b3: Right button (0/1)
         """
         try:
             self._mouse.set_buttons(b1, b2, b3)
@@ -219,12 +219,12 @@ class MouseDriver:
     
     def move(self, x=0, y=0, wheel=0):
         """
-        移动鼠标
+        Move mouse
         
         Args:
-            x: X 轴位移（-127 到 127）
-            y: Y 轴位移（-127 到 127）
-            wheel: 滚轮位移（-127 到 127）
+            x: X axis displacement (-127 to 127)
+            y: Y axis displacement (-127 to 127)
+            wheel: Wheel displacement (-127 to 127)
         """
         try:
             self._mouse.move(x, y, wheel)
@@ -234,5 +234,5 @@ class MouseDriver:
             sys.print_exception(e)
     
     def is_connected(self):
-        """检查是否已连接"""
+        """Check connection status"""
         return self._mouse.get_state() == HIDMouse.DEVICE_CONNECTED

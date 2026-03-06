@@ -1,8 +1,8 @@
 """
-消息队列驱动
+Message Queue Driver
 
-提供发布/订阅模式的消息队列实现。
-支持固定大小缓冲区，防止内存溢出。
+Provides publish/subscribe pattern message queue implementation.
+Supports fixed-size buffer to prevent memory overflow.
 """
 
 from collections import deque
@@ -10,14 +10,14 @@ from collections import deque
 
 class MessageQueue:
     """
-    简单消息队列实现
+    Simple Message Queue Implementation
     
-    功能:
-    - 发布/订阅模式
-    - 固定大小缓冲区（防止内存溢出）
-    - 支持超时轮询
+    Features:
+    - Publish/subscribe pattern
+    - Fixed-size buffer (prevents memory overflow)
+    - Timeout polling support
     
-    使用示例:
+    Usage Example:
         mq = MessageQueue(max_size=10)
         mq.subscribe("wifi/raw", my_callback)
         mq.publish("wifi/raw", "Hello")
@@ -26,24 +26,24 @@ class MessageQueue:
     
     def __init__(self, max_size=10):
         """
-        初始化消息队列
+        Initialize message queue
         
         Args:
-            max_size: 队列最大长度（默认 10）
+            max_size: Maximum queue size (default 10)
         """
         self._queue = deque((), max_size)
         self._subscribers = {}
     
     def publish(self, topic, msg):
         """
-        发布消息到队列
+        Publish message to queue
         
         Args:
-            topic: 消息主题
-            msg: 消息内容
+            topic: Message topic
+            msg: Message content
             
         Returns:
-            bool: 是否发布成功
+            bool: Success status
         """
         try:
             self._queue.append((topic, msg))
@@ -57,14 +57,14 @@ class MessageQueue:
     
     def subscribe(self, topic, callback):
         """
-        订阅主题
+        Subscribe to topic
         
         Args:
-            topic: 消息主题
-            callback: 回调函数，签名为 callback(msg)
+            topic: Message topic
+            callback: Callback function with signature callback(msg)
             
         Returns:
-            bool: 是否订阅成功
+            bool: Success status
         """
         try:
             if topic not in self._subscribers:
@@ -79,13 +79,13 @@ class MessageQueue:
     
     def poll(self, timeout_ms=0):
         """
-        轮询消息（可选超时）
+        Poll message (optional timeout)
         
         Args:
-            timeout_ms: 超时时间（毫秒），0 表示非阻塞
+            timeout_ms: Timeout in milliseconds, 0 for non-blocking
             
         Returns:
-            tuple: (topic, msg) 或 None
+            tuple: (topic, msg) or None
         """
         try:
             if timeout_ms <= 0:
@@ -108,11 +108,11 @@ class MessageQueue:
     
     def _invoke_subscribers(self, topic, msg):
         """
-        调用订阅者回调
+        Invoke subscriber callbacks
         
         Args:
-            topic: 消息主题
-            msg: 消息内容
+            topic: Message topic
+            msg: Message content
         """
         if topic in self._subscribers:
             for callback in self._subscribers[topic]:

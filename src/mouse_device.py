@@ -1,7 +1,7 @@
 """
-鼠标设备
+Mouse Device
 
-提供高级鼠标 API，封装 HID 驱动。
+Provides high-level mouse API, encapsulates HID driver.
 """
 
 import time
@@ -11,48 +11,48 @@ from hid_driver import MouseDriver
 
 class MouseDevice:
     """
-    鼠标设备类
+    Mouse Device Class
     
-    提供高级鼠标 API，支持：
-    - 鼠标按钮按下/释放
-    - 鼠标移动
-    - 滚轮滚动
+    Provides high-level mouse API, supports:
+    - Mouse button press/release
+    - Mouse movement
+    - Wheel scrolling
     """
     
     def __init__(self, device_name="ESP32-Mouse"):
         """
-        初始化鼠标设备
+        Initialize mouse device
         
         Args:
-            device_name: 设备名称
+            device_name: Device name
         """
         self._hid = MouseDriver(device_name)
         self._buttons = [0, 0, 0]
     
     def start(self):
         """
-        启动鼠标
+        Start mouse
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         return self._hid.start()
     
     def start_advertising(self):
         """
-        开始广播
+        Start advertising
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         return self._hid.start_advertising()
     
     def click(self, button="left"):
         """
-        点击鼠标按钮
+        Click mouse button
         
         Args:
-            button: 按钮名称（'left', 'middle', 'right'）
+            button: Button name ('left', 'middle', 'right')
         """
         try:
             if button == "left":
@@ -72,14 +72,15 @@ class MouseDevice:
             self._hid.set_buttons(*self._buttons)
         except Exception as e:
             print(f"[ERROR] MouseDevice.click: {e}")
+            import sys
             sys.print_exception(e)
     
     def press(self, button="left"):
         """
-        按下鼠标按钮
+        Press mouse button
         
         Args:
-            button: 按钮名称
+            button: Button name
         """
         try:
             if button == "left":
@@ -96,14 +97,15 @@ class MouseDevice:
             self._hid.set_buttons(*self._buttons)
         except Exception as e:
             print(f"[ERROR] MouseDevice.press: {e}")
+            import sys
             sys.print_exception(e)
     
     def release(self, button="left"):
         """
-        释放鼠标按钮
+        Release mouse button
         
         Args:
-            button: 按钮名称
+            button: Button name
         """
         try:
             if button == "left":
@@ -120,40 +122,43 @@ class MouseDevice:
             self._hid.set_buttons(*self._buttons)
         except Exception as e:
             print(f"[ERROR] MouseDevice.release: {e}")
+            import sys
             sys.print_exception(e)
     
     def move(self, x=0, y=0):
         """
-        移动鼠标
+        Move mouse
         
         Args:
-            x: X 轴位移（-127 到 127）
-            y: Y 轴位移（-127 到 127）
+            x: X axis displacement (-127 to 127)
+            y: Y axis displacement (-127 to 127)
         """
         try:
             self._hid.move(x=x, y=y)
         except Exception as e:
             print(f"[ERROR] MouseDevice.move: {e}")
+            import sys
             sys.print_exception(e)
     
     def scroll(self, steps=1):
         """
-        滚动滚轮
+        Scroll wheel
         
         Args:
-            steps: 滚动步数（正数向上，负数向下）
+            steps: Scroll steps (positive up, negative down)
         """
         try:
             self._hid.move(wheel=steps)
         except Exception as e:
             print(f"[ERROR] MouseDevice.scroll: {e}")
+            import sys
             sys.print_exception(e)
     
     def is_connected(self):
         """
-        检查是否已连接
+        Check connection status
         
         Returns:
-            bool: 连接状态
+            bool: Connection state
         """
         return self._hid.is_connected()

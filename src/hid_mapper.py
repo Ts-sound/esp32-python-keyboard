@@ -1,8 +1,8 @@
 """
-HID 键码映射工具
+HID Keycode Mapping Utility
 
-提供完整的 HID 键盘键码映射表。
-基于 USB HID Usage Tables 标准。
+Provides complete HID keyboard keycode mapping table.
+Based on USB HID Usage Tables standard.
 """
 
 HID_KEYMAP = {
@@ -65,36 +65,36 @@ HID_MODIFIERS = {
 
 def get_hid_code(key_str):
     """
-    获取 HID 键码
+    Get HID keycode
     
     Args:
-        key_str: 按键名称字符串
+        key_str: Key name string
         
     Returns:
-        int: HID 键码，未知键返回 None
+        int: HID keycode, None for unknown keys
     """
     return HID_KEYMAP.get(key_str.lower())
 
 
 def get_modifier_code(modifier_str):
     """
-    获取修饰键码
+    Get modifier keycode
     
     Args:
-        modifier_str: 修饰键名称
+        modifier_str: Modifier key name
         
     Returns:
-        int: 修饰键位掩码
+        int: Modifier bitmask
     """
     return HID_MODIFIERS.get(modifier_str.lower(), 0)
 
 
 def parse_key_string(key_str):
     """
-    解析按键字符串，返回键码和修饰键
+    Parse key string, return keycode and modifier
     
     Args:
-        key_str: 按键字符串（如 'A', 'Ctrl+S'）
+        key_str: Key string (e.g., 'A', 'Ctrl+S')
         
     Returns:
         tuple: (key_code, modifier_mask)

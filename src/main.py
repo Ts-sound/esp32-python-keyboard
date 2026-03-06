@@ -1,7 +1,7 @@
 """
-ESP32 Keyboard 主入口
+ESP32 Keyboard Main Entry Point
 
-启动键盘应用，初始化所有组件并运行主循环。
+Starts keyboard application, initializes all components and runs main loop.
 """
 
 from machine import Pin
@@ -12,7 +12,7 @@ from keyboard_app import KeyboardApp
 
 
 def blink_led(count=LED_BLINK_COUNT, interval_ms=LED_BLINK_INTERVAL_MS):
-    """LED 闪烁指示"""
+    """LED blink indication"""
     led = Pin(LED_PIN, Pin.OUT)
     for _ in range(count):
         led.value(0)
@@ -22,7 +22,7 @@ def blink_led(count=LED_BLINK_COUNT, interval_ms=LED_BLINK_INTERVAL_MS):
 
 
 def main():
-    """主函数"""
+    """Main function"""
     print("[INFO] ESP32 Keyboard starting...")
     blink_led()
     

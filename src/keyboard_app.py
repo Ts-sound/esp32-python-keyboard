@@ -1,7 +1,7 @@
 """
-键盘应用
+Keyboard Application
 
-应用层逻辑，协调各服务层模块。
+Application layer logic, coordinates service layer modules.
 """
 
 import time
@@ -18,13 +18,13 @@ from msg_queue import MessageQueue
 
 class KeyboardApp:
     """
-    键盘应用类
+    Keyboard Application Class
     
-    协调所有服务和设备，提供统一的应用入口。
+    Coordinates all services and devices, provides unified application entry point.
     """
     
     def __init__(self):
-        """初始化应用"""
+        """Initialize application"""
         self._msg_queue = None
         self._keyboard = None
         self._wifi = None
@@ -33,33 +33,33 @@ class KeyboardApp:
     
     def init(self):
         """
-        初始化所有组件
+        Initialize all components
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         print("[INFO] Initializing components...")
         
         try:
-            # 1. 消息队列
+            # 1. Message queue
             self._msg_queue = MessageQueue(max_size=10)
             print("[INFO] MessageQueue initialized")
             
-            # 2. 键盘设备
+            # 2. Keyboard device
             self._keyboard = KeyboardDevice()
             if not self._keyboard.start():
                 print("[ERROR] Failed to start keyboard")
                 return False
             print("[INFO] Keyboard started")
             
-            # 3. WiFi 服务
+            # 3. WiFi service
             self._wifi = WiFiService(msg_queue=self._msg_queue)
             if not self._wifi.start():
                 print("[ERROR] Failed to start WiFi")
                 return False
             print("[INFO] WiFi started")
             
-            # 4. RF4 服务
+            # 4. RF4 service
             self._rf4 = RF4Service(
                 keyboard_device=self._keyboard,
                 msg_queue=self._msg_queue
@@ -75,21 +75,21 @@ class KeyboardApp:
     
     def start(self):
         """
-        启动应用主循环
+        Start application main loop
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         if not self.init():
             return False
         
         self._running = True
         
-        # 启动键盘广播
+        # Start keyboard advertising
         self._keyboard.start_advertising()
         print("[INFO] Keyboard advertising started")
         
-        # 启动 WiFi 连接
+        # Start WiFi connection
         if self._wifi.connect():
             if self._wifi.start_server():
                 print("[INFO] WiFi server ready")
@@ -98,17 +98,17 @@ class KeyboardApp:
         return True
     
     def run(self):
-        """运行主循环（阻塞）"""
+        """Run main loop (blocking)"""
         try:
             while self._running:
-                # WiFi 数据接收（非阻塞）
+                # WiFi data reception (non-blocking)
                 if self._wifi.is_connected():
                     data = self._wifi.recv_data()
                     if data:
                         print(f"[RECV] {data}")
                 
-                # RF4 状态检查（非阻塞）
-                # RF4 服务有自己的内部循环，这里只处理消息
+                # RF4 state check (non-blocking)
+                # RF4 service has its own internal loop, only handle messages here
                 
                 time.sleep_ms(MAIN_LOOP_INTERVAL_MS)
         except KeyboardInterrupt:
@@ -121,7 +121,7 @@ class KeyboardApp:
             self.stop()
     
     def stop(self):
-        """停止应用"""
+        """Stop application"""
         print("[INFO] Stopping application...")
         self._running = False
         
@@ -131,17 +131,17 @@ class KeyboardApp:
         print("[INFO] Application stopped")
     
     def get_keyboard(self):
-        """获取键盘设备"""
+        """Get keyboard device"""
         return self._keyboard
     
     def get_wifi(self):
-        """获取 WiFi 服务"""
+        """Get WiFi service"""
         return self._wifi
     
     def get_rf4(self):
-        """获取 RF4 服务"""
+        """Get RF4 service"""
         return self._rf4
     
     def get_msg_queue(self):
-        """获取消息队列"""
+        """Get message queue"""
         return self._msg_queue

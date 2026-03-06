@@ -1,8 +1,8 @@
 """
-WiFi 服务
+WiFi Service
 
-封装 ESP32 WiFi 功能，提供 TCP 服务器和客户端通信。
-支持自动重连和消息队列集成。
+Encapsulates ESP32 WiFi functionality, provides TCP server and client communication.
+Supports auto-reconnect and message queue integration.
 """
 
 import network
@@ -20,21 +20,21 @@ from config import (
 
 class WiFiService:
     """
-    WiFi 服务类
+    WiFi Service Class
     
-    提供：
-    - WiFi 连接管理
-    - TCP 服务器
-    - 客户端通信
-    - 消息队列集成
+    Provides:
+    - WiFi connection management
+    - TCP server
+    - Client communication
+    - Message queue integration
     """
     
     def __init__(self, msg_queue=None):
         """
-        初始化 WiFi 服务
+        Initialize WiFi service
         
         Args:
-            msg_queue: 消息队列实例
+            msg_queue: Message queue instance
         """
         self._wlan = network.WLAN(network.STA_IF)
         self._socket = None
@@ -44,10 +44,10 @@ class WiFiService:
     
     def start(self):
         """
-        启动 WiFi
+        Start WiFi
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._wlan.active(True)
@@ -61,10 +61,10 @@ class WiFiService:
     
     def connect(self):
         """
-        连接到 WiFi
+        Connect to WiFi
         
         Returns:
-            bool: 是否连接成功
+            bool: Connection success status
         """
         try:
             print(f"[INFO] Connecting to {WIFI_SSID}...")
@@ -88,10 +88,10 @@ class WiFiService:
     
     def reconnect(self):
         """
-        重新连接 WiFi
+        Reconnect WiFi
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             if self._wlan.isconnected():
@@ -106,10 +106,10 @@ class WiFiService:
     
     def start_server(self):
         """
-        启动 TCP 服务器
+        Start TCP server
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._socket = socket.socket()
@@ -125,10 +125,10 @@ class WiFiService:
     
     def accept_client(self):
         """
-        接受客户端连接
+        Accept client connection
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             if self._socket:
@@ -145,13 +145,13 @@ class WiFiService:
     
     def recv_data(self, buffer_size=1024):
         """
-        接收数据
+        Receive data
         
         Args:
-            buffer_size: 缓冲区大小
+            buffer_size: Buffer size
             
         Returns:
-            str: 接收的数据，或 None
+            str: Received data, or None
         """
         try:
             if self._client:
@@ -170,13 +170,13 @@ class WiFiService:
     
     def send_data(self, data):
         """
-        发送数据
+        Send data
         
         Args:
-            data: 要发送的数据
+            data: Data to send
             
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             if self._client:
@@ -191,19 +191,19 @@ class WiFiService:
     
     def is_connected(self):
         """
-        检查连接状态
+        Check connection status
         
         Returns:
-            bool: 连接状态
+            bool: Connection state
         """
         return self._wlan.isconnected() and self._connected
     
     def get_ip(self):
         """
-        获取 IP 地址
+        Get IP address
         
         Returns:
-            tuple: (ip, netmask, gateway, dns) 或 None
+            tuple: (ip, netmask, gateway, dns) or None
         """
         try:
             if self._wlan.isconnected():
@@ -216,7 +216,7 @@ class WiFiService:
             return None
     
     def close(self):
-        """关闭连接"""
+        """Close connection"""
         try:
             if self._client:
                 self._client.close()

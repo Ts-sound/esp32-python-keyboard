@@ -1,8 +1,8 @@
 """
-键盘设备
+Keyboard Device
 
-提供高级键盘 API，封装 HID 驱动。
-支持多键无冲和字符串发送。
+Provides high-level keyboard API, encapsulates HID driver.
+Supports N-key rollover and string sending.
 """
 
 import time
@@ -13,61 +13,61 @@ from hid_mapper import HID_KEYMAP
 
 class KeyboardDevice:
     """
-    键盘设备类
+    Keyboard Device Class
     
-    提供高级键盘 API，支持：
-    - 单键按下/释放
-    - 多键无冲（最多 6 键）
-    - 字符串发送
-    - 修饰键支持
+    Provides high-level keyboard API, supports:
+    - Single key press/release
+    - N-key rollover (up to 6 keys)
+    - String sending
+    - Modifier key support
     """
     
     def __init__(self, device_name="ESP32-Keyboard"):
         """
-        初始化键盘设备
+        Initialize keyboard device
         
         Args:
-            device_name: 设备名称
+            device_name: Device name
         """
         self._hid = HIDDriver(device_name)
         self._pressed_keys = []
     
     def start(self):
         """
-        启动键盘
+        Start keyboard
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         return self._hid.start()
     
     def start_advertising(self):
         """
-        开始广播
+        Start advertising
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         return self._hid.start_advertising()
     
     def stop_advertising(self):
         """
-        停止广播
+        Stop advertising
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         return self._hid.stop_advertising()
     
     def press(self, key):
         """
-        按下按键
+        Press key
         
         Args:
-            key: 按键名称（如 'a', 'enter', 'F1'）
+            key: Key name (e.g., 'a', 'enter', 'F1')
             
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             if key not in HID_KEYMAP:
@@ -80,18 +80,19 @@ class KeyboardDevice:
             return self._send_report()
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.press: {e}")
+            import sys
             sys.print_exception(e)
             return False
     
     def release(self, key):
         """
-        释放按键
+        Release key
         
         Args:
-            key: 按键名称
+            key: Key name
             
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             if key not in HID_KEYMAP:
@@ -103,33 +104,35 @@ class KeyboardDevice:
             return self._send_report()
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.release: {e}")
+            import sys
             sys.print_exception(e)
             return False
     
     def release_all(self):
         """
-        释放所有按键
+        Release all keys
         
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._pressed_keys = []
             return self._hid.release_all()
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.release_all: {e}")
+            import sys
             sys.print_exception(e)
             return False
     
     def send_string(self, text):
         """
-        发送字符串
+        Send string
         
         Args:
-            text: 要发送的字符串
+            text: String to send
             
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             for char in text:
@@ -154,50 +157,52 @@ class KeyboardDevice:
             return True
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.send_string: {e}")
+            import sys
             sys.print_exception(e)
             return False
     
     def set_modifiers(self, **kwargs):
         """
-        设置修饰键
+        Set modifiers
         
         Args:
             left_control, left_shift, left_alt, left_gui,
             right_control, right_shift, right_alt, right_gui
             
         Returns:
-            bool: 是否成功
+            bool: Success status
         """
         try:
             self._hid.send_keys(self._pressed_keys[:6], kwargs)
             return True
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.set_modifiers: {e}")
+            import sys
             sys.print_exception(e)
             return False
     
     def _send_report(self):
-        """发送 HID 报告"""
+        """Send HID report"""
         return self._hid.send_keys(self._pressed_keys[:6])
     
     def is_connected(self):
         """
-        检查是否已连接
+        Check connection status
         
         Returns:
-            bool: 连接状态
+            bool: Connection state
         """
         return self._hid.is_connected()
     
     def set_battery_level(self, level):
         """
-        设置电池电量
+        Set battery level
         
         Args:
-            level: 电量百分比（0-100）
+            level: Battery percentage (0-100)
         """
         self._hid.set_battery_level(level)
     
     def notify_battery_level(self):
-        """通知电池电量"""
+        """Notify battery level"""
         self._hid.notify_battery_level()

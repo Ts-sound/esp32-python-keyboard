@@ -1,7 +1,7 @@
 """
-LED 驱动
+LED Driver
 
-提供 LED 状态指示功能。
+Provides LED status indication functionality.
 """
 
 from machine import Pin
@@ -10,43 +10,43 @@ import time
 
 class LEDDriver:
     """
-    LED 驱动类
+    LED Driver Class
     
-    用于控制 ESP32 板载 LED，提供状态指示。
+    Controls ESP32 onboard LED for status indication.
     """
     
     def __init__(self, pin=2):
         """
-        初始化 LED 驱动
+        Initialize LED driver
         
         Args:
-            pin: LED 引脚号（默认 2）
+            pin: LED pin number (default 2)
         """
         self._pin = Pin(pin, Pin.OUT)
         self._state = 0
     
     def on(self):
-        """打开 LED"""
+        """Turn on LED"""
         self._pin.value(1)
         self._state = 1
     
     def off(self):
-        """关闭 LED"""
+        """Turn off LED"""
         self._pin.value(0)
         self._state = 0
     
     def toggle(self):
-        """切换 LED 状态"""
+        """Toggle LED state"""
         self._state = 1 - self._state
         self._pin.value(self._state)
     
     def blink(self, count=3, interval_ms=200):
         """
-        闪烁 LED
+        Blink LED
         
         Args:
-            count: 闪烁次数
-            interval_ms: 间隔时间（毫秒）
+            count: Number of blinks
+            interval_ms: Interval in milliseconds
         """
         for _ in range(count):
             self.on()
@@ -56,10 +56,10 @@ class LEDDriver:
     
     def heartbeat(self, interval_ms=1000):
         """
-        心跳闪烁（阻塞）
+        Heartbeat blink (blocking)
         
         Args:
-            interval_ms: 心跳间隔（毫秒）
+            interval_ms: Heartbeat interval in milliseconds
         """
         self.on()
         time.sleep_ms(100)

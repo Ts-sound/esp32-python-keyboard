@@ -1,8 +1,8 @@
 """
-RF4 服务
+RF4 Service
 
-实现 RF4 自动按键功能，支持 JIG 和 PULL 两种模式。
-通过消息队列接收控制命令。
+Implements RF4 auto-press functionality, supports JIG and PULL modes.
+Receives control commands via message queue.
 """
 
 import time
@@ -18,7 +18,7 @@ from config import (
 
 
 class RF4State:
-    """RF4 状态枚举"""
+    """RF4 State Enum"""
     IDLE = 0
     JIG = 1
     PULL = 2
@@ -26,22 +26,22 @@ class RF4State:
 
 class RF4Service:
     """
-    RF4 服务类
+    RF4 Service Class
     
-    提供：
-    - JIG 模式：自动按压分号键
-    - PULL 模式：自动按压分号和单引号键
-    - 消息队列控制接口
-    - 随机延迟防检测
+    Provides:
+    - JIG mode: Auto-press semicolon key
+    - PULL mode: Auto-press semicolon and single quote keys
+    - Message queue control interface
+    - Random delay for anti-detection
     """
     
     def __init__(self, keyboard_device, msg_queue=None):
         """
-        初始化 RF4 服务
+        Initialize RF4 service
         
         Args:
-            keyboard_device: 键盘设备实例
-            msg_queue: 消息队列实例
+            keyboard_device: Keyboard device instance
+            msg_queue: Message queue instance
         """
         self._keyboard = keyboard_device
         self._msg_queue = msg_queue
@@ -54,15 +54,15 @@ class RF4Service:
     
     def _handle_command(self, msg):
         """
-        处理控制命令
+        Handle control command
         
-        命令格式:
+        Command Format:
         - jig;press_ms;release_ms
         - pull;press_ms;release_ms
         - clear
         
         Args:
-            msg: 命令字符串
+            msg: Command string
         """
         try:
             parts = msg.split(';')
@@ -95,17 +95,17 @@ class RF4Service:
     
     def _random_sleep_ms(self, base_ms):
         """
-        随机延迟
+        Random delay
         
         Args:
-            base_ms: 基础延迟时间（毫秒）
+            base_ms: Base delay time in milliseconds
         """
         variance = base_ms * RF4_RANDOM_VARIANCE
         delay = random.uniform(base_ms - variance, base_ms + variance)
         time.sleep_ms(int(delay))
     
     def _jig_cycle(self):
-        """执行 JIG 循环"""
+        """Execute JIG cycle"""
         try:
             self._keyboard.press(';')
             self._random_sleep_ms(self._time_press)
@@ -117,7 +117,7 @@ class RF4Service:
             sys.print_exception(e)
     
     def _pull_cycle(self):
-        """执行 PULL 循环"""
+        """Execute PULL cycle"""
         try:
             self._keyboard.press(';')
             self._keyboard.press("'")
@@ -130,7 +130,7 @@ class RF4Service:
             sys.print_exception(e)
     
     def run(self):
-        """运行服务主循环（阻塞）"""
+        """Run service main loop (blocking)"""
         while True:
             try:
                 if self._state == RF4State.JIG:
@@ -150,12 +150,12 @@ class RF4Service:
     
     def set_state(self, state, press_ms=None, release_ms=None):
         """
-        设置运行状态
+        Set running state
         
         Args:
-            state: 状态（RF4State.IDLE/JIG/PULL）
-            press_ms: 按压时间（毫秒）
-            release_ms: 释放时间（毫秒）
+            state: State (RF4State.IDLE/JIG/PULL)
+            press_ms: Press time in milliseconds
+            release_ms: Release time in milliseconds
         """
         self._state = state
         if press_ms is not None:
@@ -164,5 +164,5 @@ class RF4Service:
             self._time_release = release_ms
     
     def stop(self):
-        """停止服务"""
+        """Stop service"""
         self._state = RF4State.IDLE
