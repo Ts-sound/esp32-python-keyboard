@@ -19,11 +19,9 @@ flowchart LR
     
     subgraph Devices["设备层"]
         KD["keyboard_device.py<br/>单键按下/释放<br/>多键无冲 (6 键)<br/>字符串发送"]
-        MD["mouse_device.py<br/>鼠标按钮控制<br/>鼠标移动/滚动"]
     end
     
     subgraph Drivers["驱动层"]
-        HD["hid_driver.py<br/>HID 键盘/鼠标封装<br/>电池电量管理"]
         LD["led_driver.py<br/>LED 状态指示"]
         MQ["msg_queue.py<br/>发布/订阅消息队列<br/>固定缓冲区防溢出"]
     end
@@ -47,13 +45,9 @@ flowchart LR
     RS --> MQ
     RS --> KD
     KA --> KD
-    KA --> MD
-    KD --> HD
-    MD --> HD
-    HD --> MPH
+    KD --> MPH
     WS --> NATIVE
-    HD --> CFG
-    HD --> HM
+    KD --> HM
     LD --> CFG
 ```
 
@@ -63,15 +57,11 @@ flowchart LR
 flowchart LR
     KA[keyboard_app] --> MQ[MessageQueue]
     KA --> KD[KeyboardDevice]
-    KA --> MD[MouseDevice]
     KA --> WS[WiFiService]
     KA --> RS[RF4Service]
     
-    KD --> HD[HIDDriver]
-    MD --> HD
-    HD --> HSK[hid_services.Keyboard]
-    HD --> MSM[hid_services.Mouse]
-    HD --> HM[HID_KEYMAP]
+    KD --> HSK[hid_services.Keyboard]
+    KD --> HM[HID_KEYMAP]
     
     WS --> NET[network, socket]
     
@@ -79,7 +69,6 @@ flowchart LR
     RS --> MQ
     
     LD[LEDDriver] --> CFG[config]
-    HD --> CFG
 ```
 
 ## 数据流
@@ -180,12 +169,10 @@ esp32-python-keyboard/
 │   ├── main.py          # 应用入口
 │   ├── config.py        # 统一配置
 │   ├── keyboard_app.py  # 应用协调器
-│   ├── keyboard_device.py   # 键盘设备
-│   ├── mouse_device.py      # 鼠标设备
-│   ├── hid_driver.py        # HID 驱动
+│   ├── keyboard_device.py   # 键盘设备（直接使用 hid_services）
+│   ├── hid_mapper.py        # HID 映射表
 │   ├── led_driver.py        # LED 驱动
 │   ├── msg_queue.py         # 消息队列
 │   ├── wifi_service.py      # WiFi 服务
-│   ├── rf4_service.py       # RF4 服务
-│   └── hid_mapper.py        # HID 映射表
+│   └── rf4_service.py       # RF4 服务
 ```

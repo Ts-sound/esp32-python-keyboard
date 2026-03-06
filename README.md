@@ -5,7 +5,6 @@
 ## 功能特性
 
 - **BLE HID 键盘**: 作为蓝牙键盘连接到手机/电脑
-- **BLE HID 鼠标**: 支持鼠标模式
 - **WiFi 控制**: 通过 TCP 接收远程命令
 - **RF4 自动按键**: 支持 JIG 和 PULL 两种自动按键模式
 - **消息队列**: 模块间通信的发布/订阅机制
@@ -27,14 +26,12 @@ esp32-python-keyboard/
 │   ├── main.py                    # 应用入口
 │   ├── config.py                  # 统一配置
 │   ├── keyboard_app.py            # 键盘应用逻辑
-│   ├── keyboard_device.py         # 键盘设备
-│   ├── mouse_device.py            # 鼠标设备
-│   ├── hid_driver.py              # HID 驱动封装
+│   ├── keyboard_device.py         # 键盘设备（直接使用 hid_services）
+│   ├── hid_mapper.py              # HID 键码映射
 │   ├── led_driver.py              # LED 驱动
 │   ├── msg_queue.py               # 消息队列
 │   ├── wifi_service.py            # WiFi 服务
-│   ├── rf4_service.py             # RF4 服务
-│   └── hid_mapper.py              # HID 键码映射
+│   └── rf4_service.py             # RF4 服务
 │
 ├── tests/                         # 单元测试
 │   ├── test_msg_queue.py
@@ -166,11 +163,12 @@ python -m pytest test_hid_mapper.py -v
 - `boot.py` - ESP32 启动脚本（设备根目录）
 - `src/main.py` - 应用主入口
 - `src/config.py` - 统一配置管理
-- `src/keyboard_device.py` / `src/mouse_device.py` - HID 设备封装
-- `src/hid_driver.py` / `src/led_driver.py` / `src/msg_queue.py` - 驱动层
+- `src/keyboard_device.py` - 键盘设备（直接使用 hid_services）
+- `src/hid_mapper.py` - HID 键码映射表
+- `src/led_driver.py` - LED 驱动
+- `src/msg_queue.py` - 消息队列
 - `src/wifi_service.py` / `src/rf4_service.py` - 业务服务
 - `src/keyboard_app.py` - 应用逻辑协调器
-- `src/hid_mapper.py` - HID 键码映射表
 
 ### 添加新功能
 

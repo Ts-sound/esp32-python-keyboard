@@ -1,13 +1,14 @@
 """
 Keyboard Device
 
-Provides high-level keyboard API, encapsulates HID driver.
+Provides high-level keyboard API using hid_services.Keyboard directly.
 Supports N-key rollover and string sending.
 """
 
 import time
+import sys
 
-from hid_driver import HIDDriver
+from hid_services import Keyboard
 from hid_mapper import HID_KEYMAP
 
 
@@ -29,8 +30,19 @@ class KeyboardDevice:
         Args:
             device_name: Device name
         """
-        self._hid = HIDDriver(device_name)
+        self._keyboard = Keyboard(device_name)
         self._pressed_keys = []
+        self._modifiers = {}
+        self._setup_callbacks()
+    
+    def _setup_callbacks(self):
+        """Setup state change callback"""
+        self._keyboard.set_state_change_callback(self._on_state_change)
+    
+    def _on_state_change(self):
+        """State change callback"""
+        state = self._keyboard.get_state()
+        print(f"[INFO] Keyboard state changed: {state}")
     
     def start(self):
         """
@@ -39,7 +51,29 @@ class KeyboardDevice:
         Returns:
             bool: Success status
         """
-        return self._hid.start()
+        try:
+            # Wait for BLE hardware to be ready
+            time.sleep_ms(500)
+            self._keyboard.start()
+            return True
+        except OSError as e:
+            if e.errno == 116:  # ETIMEDOUT
+                print("[WARN] BLE init timeout, retrying...")
+                time.sleep_ms(1000)
+                try:
+                    self._keyboard.start()
+                    return True
+                except Exception as e:
+                    print(f"[ERROR] KeyboardDevice.start: {e}")
+                    sys.print_exception(e)
+                    return False
+            print(f"[ERROR] KeyboardDevice.start: {e}")
+            sys.print_exception(e)
+            return False
+        except Exception as e:
+            print(f"[ERROR] KeyboardDevice.start: {e}")
+            sys.print_exception(e)
+            return False
     
     def start_advertising(self):
         """
@@ -48,7 +82,13 @@ class KeyboardDevice:
         Returns:
             bool: Success status
         """
-        return self._hid.start_advertising()
+        try:
+            self._keyboard.start_advertising()
+            return True
+        except Exception as e:
+            print(f"[ERROR] KeyboardDevice.start_advertising: {e}")
+            sys.print_exception(e)
+            return False
     
     def stop_advertising(self):
         """
@@ -57,7 +97,13 @@ class KeyboardDevice:
         Returns:
             bool: Success status
         """
-        return self._hid.stop_advertising()
+        try:
+            self._keyboard.stop_advertising()
+            return True
+        except Exception as e:
+            print(f"[ERROR] KeyboardDevice.stop_advertising: {e}")
+            sys.print_exception(e)
+            return False
     
     def press(self, key):
         """
@@ -80,7 +126,6 @@ class KeyboardDevice:
             return self._send_report()
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.press: {e}")
-            import sys
             sys.print_exception(e)
             return False
     
@@ -104,7 +149,6 @@ class KeyboardDevice:
             return self._send_report()
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.release: {e}")
-            import sys
             sys.print_exception(e)
             return False
     
@@ -117,10 +161,13 @@ class KeyboardDevice:
         """
         try:
             self._pressed_keys = []
-            return self._hid.release_all()
+            self._modifiers = {}
+            self._keyboard.set_keys()
+            self._keyboard.set_modifiers()
+            self._keyboard.notify_hid_report()
+            return True
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.release_all: {e}")
-            import sys
             sys.print_exception(e)
             return False
     
@@ -146,18 +193,23 @@ class KeyboardDevice:
                 code = HID_KEYMAP[char_lower]
                 
                 if is_upper:
-                    self._hid.send_keys([code], {'left_shift': 1})
+                    self._keyboard.set_keys(code)
+                    self._keyboard.set_modifiers(left_shift=1)
                 else:
-                    self._hid.send_keys([code])
+                    self._keyboard.set_keys(code)
+                    self._keyboard.set_modifiers()
                 
+                self._keyboard.notify_hid_report()
                 time.sleep_ms(20)
-                self._hid.release_all()
+                
+                self._keyboard.set_keys()
+                self._keyboard.set_modifiers()
+                self._keyboard.notify_hid_report()
                 time.sleep_ms(20)
             
             return True
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.send_string: {e}")
-            import sys
             sys.print_exception(e)
             return False
     
@@ -173,17 +225,33 @@ class KeyboardDevice:
             bool: Success status
         """
         try:
-            self._hid.send_keys(self._pressed_keys[:6], kwargs)
+            self._modifiers = kwargs
+            self._keyboard.set_modifiers(**kwargs)
+            self._keyboard.notify_hid_report()
             return True
         except Exception as e:
             print(f"[ERROR] KeyboardDevice.set_modifiers: {e}")
-            import sys
             sys.print_exception(e)
             return False
     
     def _send_report(self):
         """Send HID report"""
-        return self._hid.send_keys(self._pressed_keys[:6])
+        try:
+            # Clear and set keys (max 6)
+            self._keyboard.set_keys(*self._pressed_keys[:6])
+            
+            # Apply modifiers
+            if self._modifiers:
+                self._keyboard.set_modifiers(**self._modifiers)
+            else:
+                self._keyboard.set_modifiers()
+            
+            self._keyboard.notify_hid_report()
+            return True
+        except Exception as e:
+            print(f"[ERROR] KeyboardDevice._send_report: {e}")
+            sys.print_exception(e)
+            return False
     
     def is_connected(self):
         """
@@ -192,7 +260,7 @@ class KeyboardDevice:
         Returns:
             bool: Connection state
         """
-        return self._hid.is_connected()
+        return self._keyboard.get_state() == Keyboard.DEVICE_CONNECTED
     
     def set_battery_level(self, level):
         """
@@ -201,8 +269,8 @@ class KeyboardDevice:
         Args:
             level: Battery percentage (0-100)
         """
-        self._hid.set_battery_level(level)
+        self._keyboard.set_battery_level(level)
     
     def notify_battery_level(self):
         """Notify battery level"""
-        self._hid.notify_battery_level()
+        self._keyboard.notify_battery_level()
