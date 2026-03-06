@@ -54,6 +54,16 @@ esp32-python-keyboard/
 
 ## 快速开始
 
+### 0. 安装依赖
+
+```bash
+# 使用 setup.py 脚本检查并安装依赖
+python scripts/setup.py
+
+# 或手动安装
+pip install esptool mpremote
+```
+
 ### 1. 烧录 MicroPython 固件
 
 ```bash
@@ -170,6 +180,7 @@ python -m pytest test_hid_mapper.py -v
 
 ### 脚本说明
 
+- `scripts/setup.py` - 检查并安装依赖（esptool, mpremote）
 - `scripts/install.py` - 烧录 MicroPython 固件到 ESP32
 - `scripts/upload.py` - 使用 mpremote 上传代码到 ESP32
 - `scripts/test.py` - 运行单元测试
