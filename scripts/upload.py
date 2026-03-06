@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """ESP32 Python Keyboard - Upload Code to ESP32 using mpremote
 Supports recursive upload with force overwrite (cp -rf)
-Only update specified files (lib/MicroPythonBLEHID/hid_services.py)
-Do NOT overwrite /boot.py on device
+Uploads:
+  - src/ directory (including boot.py, main.py, etc.)
+  - lib/MicroPythonBLEHID/hid_services.py
+Does NOT overwrite /boot.py on device (already handled by src/boot.py)
 Usage:
     python upload.py [port]
     
@@ -66,13 +68,22 @@ def main():
         print("pip install mpremote")
         sys.exit(1)
     
-    # Step 1: Upload specified files with force overwrite
-    print("\n=== Uploading specified files (force overwrite) ===")
+    # Step 1: Upload files with force overwrite
+    print("\n=== Uploading files (force overwrite) ===")
     upload_errors = False
     
-    # 1. Only update lib/MicroPythonBLEHID/hid_services.py
+    # 1. Upload src directory (recursive + force overwrite)
+    # This includes boot.py, main.py, and all other modules
+    if os.path.exists("src"):
+        print("Uploading src/ directory...")
+        rc = run_mpremote_command(port, "cp -rf src :/")
+        if rc != 0:
+            upload_errors = True
+    
+    # 2. Upload lib/MicroPythonBLEHID/hid_services.py
     hid_service_file = "lib/MicroPythonBLEHID/hid_services.py"
     if os.path.exists(hid_service_file):
+        print(f"Uploading {hid_service_file}...")
         run_mpremote_command(port, "fs mkdir /lib/MicroPythonBLEHID")
         rc = run_mpremote_command(port, f"cp -f {hid_service_file} :/lib/MicroPythonBLEHID/hid_services.py")
         if rc != 0:
@@ -80,21 +91,14 @@ def main():
     else:
         print(f"Warning: {hid_service_file} not found, skip uploading this file")
     
-    # 2. Upload src directory (recursive + force overwrite)
-    if os.path.exists("src"):
-        rc = run_mpremote_command(port, "cp -rf src :/src")
-        if rc != 0:
-            upload_errors = True
-    
     # Step 2: Final status check
     if upload_errors:
         print("\n=== Upload Completed with Errors! ===")
         sys.exit(1)
     else:
         print("\n=== Upload Complete! ===")
-        print("1. lib/MicroPythonBLEHID/hid_services.py updated (force overwrite)")
-        print("2. src directory uploaded recursively (force overwrite)")
-        print("3. /boot.py on device is NOT modified")
+        print("1. src/ directory uploaded (boot.py, main.py, all modules)")
+        print("2. lib/MicroPythonBLEHID/hid_services.py updated")
         print("Restarting ESP32...")
         run_mpremote_command(port, "reset")
 

@@ -14,10 +14,15 @@
 
 ```
 esp32-python-keyboard/
-├── lib/                           # 外部依赖
-│   └── hid_services.py            # MicroPythonBLEHID 库
+├── bin/                           # 固件文件
+│   └── ESP32_GENERIC-*.bin        # MicroPython 固件
 │
-├── src/                           # 源代码（扁平结构）
+├── lib/                           # 外部依赖
+│   └── MicroPythonBLEHID/         # MicroPythonBLEHID 库
+│       └── hid_services.py        # HID 服务实现
+│
+├── src/                           # 源代码
+│   ├── boot.py                    # 启动脚本
 │   ├── main.py                    # 应用入口
 │   ├── config.py                  # 统一配置
 │   ├── keyboard_app.py            # 键盘应用逻辑
@@ -35,10 +40,14 @@ esp32-python-keyboard/
 │   ├── test_keyboard_device.py
 │   └── test_hid_mapper.py
 │
+├── scripts/                       # 工具脚本
+│   ├── install.py                 # 烧录固件脚本
+│   ├── upload.py                  # 上传代码脚本
+│   └── test.py                    # 运行测试脚本
+│
 ├── docs/                          # 文档
 │   └── design/                    # 设计文档
 │
-├── examples/                      # 示例代码
 ├── DEPENDENCIES.md                # 依赖说明
 └── README.md
 ```
@@ -48,21 +57,20 @@ esp32-python-keyboard/
 ### 1. 烧录 MicroPython 固件
 
 ```bash
-# 擦除 Flash
-esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash
+# 使用 install.py 脚本（推荐）
+python scripts/install.py --port /dev/ttyUSB0 --firmware bin/ESP32_GENERIC-20240602-v1.23.0.bin
 
-# 烧录固件
+# 或使用 esptool 手动烧录
+esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 \
-    write_flash -z 0x1000 ESP32_GENERIC-20240602-v1.23.0.bin
+    write_flash -z 0x1000 bin/ESP32_GENERIC-20240602-v1.23.0.bin
 ```
 
 ### 2. 上传代码
 
 ```bash
-# 使用 mpfshell
-mpfshell -c "open /dev/ttyUSB0" \
-    -c "mput -r lib/" \
-    -c "mput src/" \
+# 使用 upload.py 脚本（使用 mpremote）
+python scripts/upload.py /dev/ttyUSB0
 ```
 
 ### 3. 配置 WiFi
@@ -116,10 +124,14 @@ enter                       # 回车键
 ### 单元测试（PC 上运行）
 
 ```bash
+# 使用 test.py 脚本（推荐）
+python scripts/test.py
+
+# 或手动运行 pytest
 cd tests
-python -m pytest test_msg_queue.py
-python -m pytest test_keyboard_device.py
-python -m pytest test_hid_mapper.py
+python -m pytest test_msg_queue.py -v
+python -m pytest test_keyboard_device.py -v
+python -m pytest test_hid_mapper.py -v
 ```
 
 ### 手动测试（ESP32 上）
@@ -131,7 +143,8 @@ python -m pytest test_hid_mapper.py
 ## 依赖
 
 - **MicroPythonBLEHID**: https://github.com/Heerkog/MicroPythonBLEHID.git
-- **MicroPython**: v1.18+ (推荐 v1.23+)
+- **MicroPython**: v1.23+
+- **mpremote**: MicroPython 官方串口工具
 
 详见 [DEPENDENCIES.md](DEPENDENCIES.md)
 
@@ -139,18 +152,27 @@ python -m pytest test_hid_mapper.py
 
 ### 目录说明
 
-- `src/config.py` - 配置模块
+- `src/boot.py` - ESP32 启动脚本
+- `src/main.py` - 应用主入口
+- `src/config.py` - 统一配置管理
 - `src/keyboard_device.py` / `src/mouse_device.py` - HID 设备封装
 - `src/hid_driver.py` / `src/led_driver.py` / `src/msg_queue.py` - 驱动层
 - `src/wifi_service.py` / `src/rf4_service.py` - 业务服务
-- `src/keyboard_app.py` - 应用逻辑
+- `src/keyboard_app.py` - 应用逻辑协调器
+- `src/hid_mapper.py` - HID 键码映射表
 
 ### 添加新功能
 
-1. 在对应层创建模块
-2. 更新 `__init__.py`
-3. 添加测试用例
+1. 在 src/ 目录创建对应模块
+2. 在 keyboard_app.py 中集成新模块
+3. 添加测试用例到 tests/
 4. 更新文档
+
+### 脚本说明
+
+- `scripts/install.py` - 烧录 MicroPython 固件到 ESP32
+- `scripts/upload.py` - 使用 mpremote 上传代码到 ESP32
+- `scripts/test.py` - 运行单元测试
 
 ## 许可证
 
