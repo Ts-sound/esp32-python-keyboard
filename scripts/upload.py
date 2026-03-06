@@ -40,9 +40,10 @@ def run_mpremote_command(port, command):
         text=True
     )
     
-    # Print errors only (suppress normal info output)
-    if result.stderr:
-        print(f"Error: {result.stderr.strip()}")
+    # Print output (both stdout and stderr for mpremote)
+    output = result.stdout.strip() + result.stderr.strip()
+    if output:
+        print(f"  {output}")
     
     return result.returncode
 
@@ -91,6 +92,11 @@ def main():
     
     # 3. Upload lib/MicroPythonBLEHID/hid_services.py and hid_keystores.py
     print("Uploading lib/MicroPythonBLEHID/ files...")
+    
+    # Create /lib directory (ignore error if exists)
+    run_mpremote_command(port, "fs mkdir /lib")
+    
+    # Create /lib/MicroPythonBLEHID directory (ignore error if exists)
     run_mpremote_command(port, "fs mkdir /lib/MicroPythonBLEHID")
     
     for filename in ["hid_services.py", "hid_keystores.py"]:
