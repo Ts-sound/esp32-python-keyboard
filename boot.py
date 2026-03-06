@@ -3,6 +3,7 @@ boot.py -- run on boot-up
 """
 
 import sys
+sys.path.insert(0, '/lib/MicroPythonBLEHID')
 sys.path.insert(0, '/src')
 
 import main
