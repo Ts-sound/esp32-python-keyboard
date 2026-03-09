@@ -124,27 +124,71 @@ class WiFiService:
             sys.print_exception(e)
             return False
     
-    def accept_client(self):
+    def has_client(self):
         """
-        Accept client connection (non-blocking)
+        Check if a client is connected
         
+        Returns:
+            bool: Client connection state
+        """
+        return self._client is not None
+    
+    def wait_for_client(self, timeout=None):
+        """
+        Wait for client connection (blocking with timeout)
+        
+        Args:
+            timeout: Timeout in seconds (None for infinite)
+            
         Returns:
             bool: Success status
         """
         try:
             if self._socket:
-                self._socket.setblocking(False)
+                self._socket.settimeout(timeout)
                 self._client, addr = self._socket.accept()
                 self._client.settimeout(WIFI_SOCKET_TIMEOUT_SEC)
                 print(f"[INFO] Client connected: {addr}")
                 return True
             return False
         except OSError as e:
-            if e.errno == 11:  # EAGAIN - no connection pending (non-blocking)
+            if e.errno == 110:  # ETIMEDOUT
                 return False
-            print(f"[ERROR] WiFiService.accept_client: {e}")
+            print(f"[ERROR] WiFiService.wait_for_client: {e}")
             import sys
             sys.print_exception(e)
+            return False
+        except Exception as e:
+            print(f"[ERROR] WiFiService.wait_for_client: {e}")
+            import sys
+            sys.print_exception(e)
+            return False
+    
+    def close_client(self):
+        """Close current client connection"""
+        try:
+            if self._client:
+                self._client.close()
+                self._client = None
+                print("[INFO] Client disconnected")
+        except Exception as e:
+            print(f"[ERROR] WiFiService.close_client: {e}")
+            import sys
+            sys.print_exception(e)
+    
+    def accept_client(self):
+        """
+        Accept client connection (blocking)
+        
+        Returns:
+            bool: Success status
+        """
+        try:
+            if self._socket:
+                self._client, addr = self._socket.accept()
+                self._client.settimeout(WIFI_SOCKET_TIMEOUT_SEC)
+                print(f"[INFO] Client connected: {addr}")
+                return True
             return False
         except Exception as e:
             print(f"[ERROR] WiFiService.accept_client: {e}")
@@ -154,22 +198,33 @@ class WiFiService:
     
     def recv_data(self, buffer_size=1024):
         """
-        Receive data
+        Receive data (blocking with short timeout)
         
         Args:
             buffer_size: Buffer size
             
         Returns:
-            str: Received data, or None
+            str: Received data, or None if client disconnected
         """
         try:
             if self._client:
+                self._client.settimeout(1.0)  # Short timeout for responsive disconnect detection
                 data = self._client.recv(buffer_size)
                 if data:
                     msg = data.decode('utf-8')
                     if self._msg_queue:
                         self._msg_queue.publish("wifi/raw", msg)
                     return msg
+                else:
+                    # Empty data means client disconnected
+                    return None
+            return None
+        except OSError as e:
+            if e.errno == 110:  # ETIMEDOUT - no data available
+                return ""  # Empty string, client still connected
+            print(f"[ERROR] WiFiService.recv_data: {e}")
+            import sys
+            sys.print_exception(e)
             return None
         except Exception as e:
             print(f"[ERROR] WiFiService.recv_data: {e}")

@@ -98,21 +98,27 @@ class KeyboardApp:
         return True
     
     def run(self):
-        """Run main loop (blocking)"""
+        """Run main loop (blocking - wait for client, then process data)"""
         try:
             while self._running:
-                # Accept client connection (non-blocking)
-                if self._wifi.is_connected():
-                    self._wifi.accept_client()
+                # Wait for client connection (blocking with 1s timeout)
+                if not self._wifi.has_client():
+                    if not self._wifi.wait_for_client(timeout=1.0):
+                        continue  # Timeout, check running state
+                    print("[INFO] Starting data processing...")
                 
-                # WiFi data reception (non-blocking)
-                if self._wifi.is_connected():
-                    data = self._wifi.recv_data()
-                    if data:
-                        print(f"[RECV] {data}")
+                # Client connected, process data (blocking with 1s timeout)
+                data = self._wifi.recv_data()
+                if data:
+                    print(f"[RECV] {data}")
+                elif data is None:
+                    # Client disconnected
+                    print("[INFO] Client disconnected, waiting for new connection...")
+                    self._wifi.close_client()
+                # data == "": no data, client still connected, continue
                 
-                # RF4 state check (non-blocking)
-                # RF4 service has its own internal loop, only handle messages here
+                # RF4 state check via message queue (non-blocking)
+                # RF4 service has its own internal loop
                 
                 time.sleep_ms(MAIN_LOOP_INTERVAL_MS)
         except KeyboardInterrupt:
