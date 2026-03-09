@@ -8,6 +8,22 @@ from machine import Pin
 import time
 
 
+def blink_led(count=3, interval_ms=200):
+    """
+    Blink LED indication
+    
+    Args:
+        count: Number of blinks
+        interval_ms: Interval in milliseconds
+    """
+    led = Pin(2, Pin.OUT)
+    for _ in range(count):
+        led.value(0)
+        time.sleep_ms(interval_ms)
+        led.value(1)
+        time.sleep_ms(interval_ms)
+
+
 class LEDDriver:
     """
     LED Driver Class

@@ -3,7 +3,8 @@
 Supports recursive upload with force overwrite (cp -rf)
 Uploads:
   - boot.py (to device root /boot.py)
-  - src/ directory (main.py and all modules)
+  - main.py (to device root /main.py)
+  - src/ directory (all modules)
   - lib/MicroPythonBLEHID/hid_services.py
   - lib/MicroPythonBLEHID/hid_keystores.py
 Usage:
@@ -83,14 +84,23 @@ def main():
     else:
         print("Warning: boot.py not found, skip uploading this file")
     
-    # 2. Upload src directory (excluding boot.py)
+    # 2. Upload main.py to device root
+    if os.path.exists("main.py"):
+        print("Uploading main.py...")
+        rc = run_mpremote_command(port, "cp -f main.py :/main.py")
+        if rc != 0:
+            upload_errors = True
+    else:
+        print("Warning: main.py not found, skip uploading this file")
+    
+    # 3. Upload src directory (all modules)
     if os.path.exists("src"):
         print("Uploading src/ directory...")
         rc = run_mpremote_command(port, "cp -rf src :/")
         if rc != 0:
             upload_errors = True
     
-    # 3. Upload lib/MicroPythonBLEHID/hid_services.py and hid_keystores.py
+    # 4. Upload lib/MicroPythonBLEHID/hid_services.py and hid_keystores.py
     print("Uploading lib/MicroPythonBLEHID/ files...")
     
     # Create /lib directory (ignore error if exists)
@@ -116,8 +126,9 @@ def main():
     else:
         print("\n=== Upload Complete! ===")
         print("1. boot.py uploaded to device root")
-        print("2. src/ directory uploaded (main.py, all modules)")
-        print("3. lib/MicroPythonBLEHID/ files uploaded (hid_services.py, hid_keystores.py)")
+        print("2. main.py uploaded to device root")
+        print("3. src/ directory uploaded (all modules)")
+        print("4. lib/MicroPythonBLEHID/ files uploaded (hid_services.py, hid_keystores.py)")
         print("Restarting ESP32...")
         run_mpremote_command(port, "reset")
 

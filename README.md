@@ -16,14 +16,14 @@ esp32-python-keyboard/
 ├── bin/                           # 固件文件
 │   └── ESP32_GENERIC-*.bin        # MicroPython 固件
 │
-├── boot.py                        # ESP32 启动脚本（设备上 /boot.py）
+├── boot.py                        # ESP32 启动脚本（保留空文件）
+├── main.py                        # 应用入口（设备上 /main.py）
 │
 ├── lib/                           # 外部依赖
 │   └── MicroPythonBLEHID/         # MicroPythonBLEHID 库
 │       └── hid_services.py        # HID 服务实现
 │
 ├── src/                           # 源代码
-│   ├── main.py                    # 应用入口
 │   ├── config.py                  # 统一配置
 │   ├── keyboard_app.py            # 键盘应用逻辑
 │   ├── keyboard_device.py         # 键盘设备（直接使用 hid_services）
@@ -160,8 +160,8 @@ python -m pytest test_hid_mapper.py -v
 
 ### 目录说明
 
-- `boot.py` - ESP32 启动脚本（设备根目录）
-- `src/main.py` - 应用主入口
+- `boot.py` - ESP32 启动脚本（保留空文件，用于硬件初始化预留）
+- `main.py` - 应用主入口（设备上 /main.py）
 - `src/config.py` - 统一配置管理
 - `src/keyboard_device.py` - 键盘设备（直接使用 hid_services）
 - `src/hid_mapper.py` - HID 键码映射表

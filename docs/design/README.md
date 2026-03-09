@@ -164,15 +164,42 @@ except Exception as e:
 
 ```
 esp32-python-keyboard/
-├── boot.py              # ESP32 启动脚本（设备根目录）
-├── src/
-│   ├── main.py          # 应用入口
-│   ├── config.py        # 统一配置
-│   ├── keyboard_app.py  # 应用协调器
-│   ├── keyboard_device.py   # 键盘设备（直接使用 hid_services）
-│   ├── hid_mapper.py        # HID 映射表
-│   ├── led_driver.py        # LED 驱动
-│   ├── msg_queue.py         # 消息队列
-│   ├── wifi_service.py      # WiFi 服务
-│   └── rf4_service.py       # RF4 服务
+├── boot.py              # ESP32 启动脚本（保留空文件）
+├── main.py              # 应用入口（设备上 /main.py）
+└── src/
+    ├── config.py        # 统一配置
+    ├── keyboard_app.py  # 应用协调器
+    ├── keyboard_device.py   # 键盘设备（直接使用 hid_services）
+    ├── hid_mapper.py        # HID 映射表
+    ├── led_driver.py        # LED 驱动
+    ├── msg_queue.py         # 消息队列
+    ├── wifi_service.py      # WiFi 服务
+    └── rf4_service.py       # RF4 服务
 ```
+
+## 后续优化项
+
+### 异常处理增强
+
+建议在 `main.py` 中添加崩溃后自动重启功能：
+
+```python
+import machine
+
+try:
+    app.run()
+except KeyboardInterrupt:
+    print("Interrupted by user")
+except Exception as e:
+    print("Fatal error:")
+    sys.print_exception(e)
+    machine.reset()  # 崩溃后自动重启
+finally:
+    led.value(0)
+```
+
+**优点：**
+- 崩溃后自动恢复，无需手动重启
+- 调试时可按 Ctrl+C 进入 REPL
+
+**当前状态：** 暂未实现，作为可选优化项。
