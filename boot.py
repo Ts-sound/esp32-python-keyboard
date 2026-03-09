@@ -7,10 +7,12 @@ import time
 import select
 from machine import Pin
 
-from config import LED_PIN
-
+# Add src and lib paths first
 sys.path.insert(0, '/lib/MicroPythonBLEHID')
 sys.path.insert(0, '/src')
+
+# Now import from config
+from config import LED_PIN
 
 # Turn on LED to indicate boot
 led = Pin(LED_PIN, Pin.OUT)
