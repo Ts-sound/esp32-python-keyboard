@@ -51,6 +51,8 @@ class WiFiService:
         """
         try:
             self._wlan.active(True)
+            # Configure network interface buffers
+            self._wlan.config(max_tx_buf_len=1500, max_rx_buf_len=1500)
             print("[INFO] WiFi activated")
             return True
         except Exception as e:
@@ -112,7 +114,8 @@ class WiFiService:
             bool: Success status
         """
         try:
-            self._socket = socket.socket()
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self._socket.bind(('0.0.0.0', WIFI_PORT))
             self._socket.listen(5)
             print(f"[INFO] Server listening on port {WIFI_PORT}")
