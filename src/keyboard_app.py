@@ -15,6 +15,7 @@ from keyboard_device import KeyboardDevice
 from rf4_service import RF4Service
 from wifi_service import WiFiService
 from msg_queue import MessageQueue
+from keyboard_service import KeyboardService
 
 
 class KeyboardApp:
@@ -30,6 +31,7 @@ class KeyboardApp:
         self._keyboard = None
         self._wifi = None
         self._rf4 = None
+        self._keyboard_service = None
         self._running = False
     
     def init(self):
@@ -66,6 +68,13 @@ class KeyboardApp:
                 msg_queue=self._msg_queue
             )
             print("[INFO] RF4 service initialized")
+            
+            # 5. Keyboard service (handles WiFi commands)
+            self._keyboard_service = KeyboardService(
+                keyboard_device=self._keyboard,
+                msg_queue=self._msg_queue
+            )
+            print("[INFO] Keyboard service initialized")
             
             return True
         except Exception as e:
@@ -106,9 +115,10 @@ class KeyboardApp:
                 if not self._wifi.has_client():
                     if not self._wifi.wait_for_client(WIFI_TIMEOUT_SEC):
                         continue  # Timeout, check running state
-                    print("[INFO] Starting data processing...")
+                    print("[INFO] Client connected")
                 
-                # Client connected, process data (blocking)
+                # Client connected, keep connection alive
+                # Data processing is handled by keyboard_service via message queue
                 try:
                     data = self._wifi.recv_data()
                     if data:
@@ -122,8 +132,9 @@ class KeyboardApp:
                     print(f"[ERROR] Network error: {e}")
                     self._wifi.close_client()
                 
-                # RF4 state check via message queue (non-blocking)
-                # RF4 service has its own internal loop
+                # RF4 and keyboard commands are handled in background
+                # RF4 runs in its own thread
+                # keyboard_service handles commands via message queue callback
                 
                 time.sleep_ms(MAIN_LOOP_INTERVAL_MS)
         except KeyboardInterrupt:

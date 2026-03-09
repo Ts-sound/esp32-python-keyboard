@@ -2,11 +2,12 @@
 RF4 Service
 
 Implements RF4 auto-press functionality, supports JIG and PULL modes.
-Receives control commands via message queue.
+Receives control commands via message queue (subscribes to wifi/raw).
 """
 
 import time
 import random
+import _thread
 
 from config import (
     RF4_JIG_PRESS_MS,
@@ -50,7 +51,29 @@ class RF4Service:
         self._time_release = RF4_JIG_RELEASE_MS
         
         if msg_queue:
+            # Subscribe to both wifi/raw (for RF4 commands) and rf4/control
+            msg_queue.subscribe("wifi/raw", self._handle_wifi_command)
             msg_queue.subscribe("rf4/control", self._handle_command)
+        
+        # Start RF4 background thread
+        _thread.start_new_thread(self._run_loop, ())
+        print("[INFO] RF4 service started in background thread")
+    
+    def _handle_wifi_command(self, msg):
+        """
+        Handle WiFi command (from wifi/raw topic)
+        
+        Command Format (same as rf4/control):
+        - jig;press_ms;release_ms
+        - pull;press_ms;release_ms
+        - clear
+        
+        Args:
+            msg: Command string
+        """
+        # Only process RF4 commands (jig;, pull;, clear)
+        if msg.startswith("jig") or msg.startswith("pull") or msg == "clear":
+            self._handle_command(msg)
     
     def _handle_command(self, msg):
         """
@@ -129,8 +152,8 @@ class RF4Service:
             import sys
             sys.print_exception(e)
     
-    def run(self):
-        """Run service main loop (blocking)"""
+    def _run_loop(self):
+        """RF4 background loop"""
         while True:
             try:
                 if self._state == RF4State.JIG:
@@ -143,10 +166,14 @@ class RF4Service:
                 print("[INFO] RF4 service stopped")
                 break
             except Exception as e:
-                print(f"[ERROR] RF4Service.run: {e}")
+                print(f"[ERROR] RF4Service._run_loop: {e}")
                 import sys
                 sys.print_exception(e)
                 time.sleep(1)
+    
+    def run(self):
+        """Run service main loop (blocking) - deprecated, use background thread"""
+        self._run_loop()
     
     def set_state(self, state, press_ms=None, release_ms=None):
         """
