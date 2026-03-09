@@ -13,7 +13,7 @@ from micropython import const
 WIFI_SSID = "T"
 WIFI_PASSWORD = "12345678"
 WIFI_PORT = const(80)
-WIFI_TIMEOUT_SEC = const(30)
+WIFI_TIMEOUT_SEC = const(60)
 WIFI_RECONNECT_DELAY_SEC = const(5)
 WIFI_SOCKET_TIMEOUT_SEC = const(1800)
 

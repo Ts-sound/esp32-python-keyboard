@@ -9,6 +9,7 @@ import time
 from config import (
     HID_ADVERTISING_TIMEOUT_SEC,
     MAIN_LOOP_INTERVAL_MS,
+    WIFI_TIMEOUT_SEC,
 )
 from keyboard_device import KeyboardDevice
 from rf4_service import RF4Service
@@ -103,7 +104,7 @@ class KeyboardApp:
             while self._running:
                 # Wait for client connection (blocking with 1s timeout)
                 if not self._wifi.has_client():
-                    if not self._wifi.wait_for_client(timeout=1.0):
+                    if not self._wifi.wait_for_client(WIFI_TIMEOUT_SEC):
                         continue  # Timeout, check running state
                     print("[INFO] Starting data processing...")
                 

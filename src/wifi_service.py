@@ -112,8 +112,7 @@ class WiFiService:
             bool: Success status
         """
         try:
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self._socket = socket.socket()
             self._socket.bind(('0.0.0.0', WIFI_PORT))
             self._socket.listen(5)
             print(f"[INFO] Server listening on port {WIFI_PORT}")
