@@ -4,6 +4,7 @@ Keyboard Application
 Application layer logic, coordinates service layer modules.
 """
 
+import asyncio
 import time
 
 from config import (
@@ -32,6 +33,7 @@ class KeyboardApp:
         self._wifi = None
         self._rf4 = None
         self._keyboard_service = None
+        self._rf4_task = None
         self._running = False
     
     def init(self):
@@ -107,54 +109,64 @@ class KeyboardApp:
         print("[INFO] Application started")
         return True
     
-    def run(self):
-        """Run main loop (blocking - wait for client, then process data)"""
-        try:
-            while self._running:
-                # Wait for client connection (blocking with timeout)
-                if not self._wifi.has_client():
-                    if not self._wifi.wait_for_client(WIFI_TIMEOUT_SEC):
-                        continue  # Timeout, check running state
-                    print("[INFO] Client connected")
-                
-                # Client connected, keep connection alive
-                # Data processing is handled by keyboard_service via message queue
-                try:
-                    data = self._wifi.recv_data()
-                    if data:
-                        print(f"[RECV] {data}")
-                    elif data is None:
-                        # Client disconnected
-                        print("[INFO] Client disconnected, waiting for new connection...")
-                        self._wifi.close_client()
-                except OSError as e:
-                    # Network error - client disconnected
-                    print(f"[ERROR] Network error: {e}")
+    async def run_async(self):
+        """Run main loop (async) - follows keyboard_example.py pattern"""
+        # Start RF4 as background task
+        self._rf4_task = asyncio.create_task(self._rf4.run_async())
+        
+        # Main WiFi loop
+        while self._running:
+            # Wait for client connection (async polling)
+            if not self._wifi.has_client():
+                if not await self._wifi.wait_for_client_async(WIFI_TIMEOUT_SEC):
+                    continue
+                print("[INFO] Client connected")
+            
+            # Process data (async polling)
+            try:
+                data = await self._wifi.recv_data_async()
+                if data:
+                    print(f"[RECV] {data}")
+                elif data is None:
+                    # Client disconnected
+                    print("[INFO] Client disconnected, waiting for new connection...")
                     self._wifi.close_client()
+                # data == "": no data, continue
                 
-                # RF4 and keyboard commands are handled in background
-                # RF4 runs in its own thread
-                # keyboard_service handles commands via message queue callback
-                
-                time.sleep_ms(MAIN_LOOP_INTERVAL_MS)
-        except KeyboardInterrupt:
-            print("[INFO] Stopping...")
-        except Exception as e:
-            print(f"[ERROR] KeyboardApp.run: {e}")
-            import sys
-            sys.print_exception(e)
-        finally:
-            self.stop()
+            except OSError as e:
+                print(f"[ERROR] Network error: {e}")
+                self._wifi.close_client()
+            
+            # Commands handled by keyboard_service via message queue
+            # RF4 runs in background task
+            
+            await asyncio.sleep_ms(MAIN_LOOP_INTERVAL_MS)
     
-    def stop(self):
-        """Stop application"""
-        print("[INFO] Stopping application...")
+    async def stop_async(self):
+        """Stop application (async)"""
         self._running = False
         
+        # Cancel RF4 task
+        if self._rf4_task:
+            self._rf4_task.cancel()
+            try:
+                await self._rf4_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Close WiFi
         if self._wifi:
             self._wifi.close()
         
         print("[INFO] Application stopped")
+    
+    def run(self):
+        """Run main loop (blocking) - legacy support"""
+        asyncio.run(self.run_async())
+    
+    def stop(self):
+        """Stop application (blocking) - legacy support"""
+        asyncio.run(self.stop_async())
     
     def get_keyboard(self):
         """Get keyboard device"""

@@ -8,6 +8,7 @@ Supports auto-reconnect and message queue integration.
 import network
 import socket
 import time
+import asyncio
 
 from config import (
     WIFI_SSID,
@@ -52,6 +53,7 @@ class WiFiService:
         try:
             self._wlan.active(True)
             print("[INFO] WiFi activated")
+            self._wlan.scan()
             return True
         except Exception as e:
             print(f"[ERROR] WiFiService.start: {e}")
@@ -224,6 +226,74 @@ class WiFiService:
             import sys
             sys.print_exception(e)
             return None
+    
+    async def recv_data_async(self, buffer_size=1024):
+        """
+        Receive data (async polling)
+        
+        Args:
+            buffer_size: Buffer size
+            
+        Returns:
+            str: Received data
+            None: No data or client disconnected
+        """
+        try:
+            if self._client:
+                self._client.setblocking(False)
+                try:
+                    data = self._client.recv(buffer_size)
+                    if data:
+                        msg = data.decode('utf-8')
+                        if self._msg_queue:
+                            self._msg_queue.publish("wifi/raw", msg)
+                        return msg
+                    else:
+                        # Empty data means client disconnected
+                        return None
+                except OSError as e:
+                    if e.errno == 11:  # EAGAIN - no data
+                        return ""
+                    raise
+            return None
+        except Exception as e:
+            print(f"[ERROR] WiFiService.recv_data_async: {e}")
+            import sys
+            sys.print_exception(e)
+            return None
+    
+    async def wait_for_client_async(self, timeout_sec):
+        """
+        Wait for client connection (async polling)
+        
+        Args:
+            timeout_sec: Timeout in seconds
+            
+        Returns:
+            bool: Success status
+        """
+        if not self._socket:
+            return False
+        
+        elapsed = 0
+        while elapsed < timeout_sec:
+            self._socket.setblocking(False)
+            try:
+                self._client, addr = self._socket.accept()
+                self._client.settimeout(WIFI_SOCKET_TIMEOUT_SEC)
+                print(f"[INFO] Client connected: {addr}")
+                return True
+            except OSError as e:
+                if e.errno == 11:  # EAGAIN - no connection pending
+                    await asyncio.sleep(0.5)
+                    elapsed += 0.5
+                else:
+                    print(f"[ERROR] WiFiService.wait_for_client_async: {e}")
+                    import sys
+                    sys.print_exception(e)
+                    return False
+        
+        return False  # Timeout
     
     def send_data(self, data):
         """

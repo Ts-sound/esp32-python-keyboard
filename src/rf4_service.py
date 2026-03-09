@@ -5,9 +5,9 @@ Implements RF4 auto-press functionality, supports JIG and PULL modes.
 Receives control commands via message queue (subscribes to wifi/raw).
 """
 
-import time
+import asyncio
 import random
-import _thread
+import time
 
 from config import (
     RF4_JIG_PRESS_MS,
@@ -55,9 +55,7 @@ class RF4Service:
             msg_queue.subscribe("wifi/raw", self._handle_wifi_command)
             msg_queue.subscribe("rf4/control", self._handle_command)
         
-        # Start RF4 background thread
-        _thread.start_new_thread(self._run_loop, ())
-        print("[INFO] RF4 service started in background thread")
+        print("[INFO] RF4 service initialized (async mode)")
     
     def _handle_wifi_command(self, msg):
         """
@@ -118,7 +116,7 @@ class RF4Service:
     
     def _random_sleep_ms(self, base_ms):
         """
-        Random delay
+        Random delay (blocking)
         
         Args:
             base_ms: Base delay time in milliseconds
@@ -127,53 +125,65 @@ class RF4Service:
         delay = random.uniform(base_ms - variance, base_ms + variance)
         time.sleep_ms(int(delay))
     
-    def _jig_cycle(self):
-        """Execute JIG cycle"""
+    async def _random_sleep_ms_async(self, base_ms):
+        """
+        Random delay (async)
+        
+        Args:
+            base_ms: Base delay time in milliseconds
+        """
+        variance = base_ms * RF4_RANDOM_VARIANCE
+        delay = int(random.uniform(base_ms - variance, base_ms + variance))
+        await asyncio.sleep_ms(delay)
+    
+    async def _jig_cycle_async(self):
+        """Execute JIG cycle (async)"""
         try:
             self._keyboard.press(';')
-            self._random_sleep_ms(self._time_press)
+            await self._random_sleep_ms_async(self._time_press)
             self._keyboard.release(';')
-            self._random_sleep_ms(self._time_release)
+            await self._random_sleep_ms_async(self._time_release)
         except Exception as e:
-            print(f"[ERROR] RF4Service._jig_cycle: {e}")
+            print(f"[ERROR] RF4Service._jig_cycle_async: {e}")
             import sys
             sys.print_exception(e)
     
-    def _pull_cycle(self):
-        """Execute PULL cycle"""
+    async def _pull_cycle_async(self):
+        """Execute PULL cycle (async)"""
         try:
             self._keyboard.press(';')
             self._keyboard.press("'")
-            self._random_sleep_ms(self._time_press)
+            await self._random_sleep_ms_async(self._time_press)
             self._keyboard.release("'")
-            self._random_sleep_ms(self._time_release)
+            await self._random_sleep_ms_async(self._time_release)
         except Exception as e:
-            print(f"[ERROR] RF4Service._pull_cycle: {e}")
+            print(f"[ERROR] RF4Service._pull_cycle_async: {e}")
             import sys
             sys.print_exception(e)
     
-    def _run_loop(self):
-        """RF4 background loop"""
+    async def run_async(self):
+        """RF4 async loop - runs forever"""
         while True:
             try:
                 if self._state == RF4State.JIG:
-                    self._jig_cycle()
+                    await self._jig_cycle_async()
                 elif self._state == RF4State.PULL:
-                    self._pull_cycle()
+                    await self._pull_cycle_async()
                 else:
-                    time.sleep(2)
+                    await asyncio.sleep(2)
             except KeyboardInterrupt:
                 print("[INFO] RF4 service stopped")
                 break
             except Exception as e:
-                print(f"[ERROR] RF4Service._run_loop: {e}")
+                print(f"[ERROR] RF4Service.run_async: {e}")
                 import sys
                 sys.print_exception(e)
-                time.sleep(1)
+                await asyncio.sleep(1)
     
     def run(self):
-        """Run service main loop (blocking) - deprecated, use background thread"""
-        self._run_loop()
+        """Run service main loop (blocking) - deprecated, use run_async()"""
+        # Legacy support
+        asyncio.run(self.run_async())
     
     def set_state(self, state, press_ms=None, release_ms=None):
         """
