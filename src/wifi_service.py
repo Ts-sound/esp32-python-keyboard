@@ -51,8 +51,6 @@ class WiFiService:
         """
         try:
             self._wlan.active(True)
-            # Configure network interface buffers
-            self._wlan.config(max_tx_buf_len=1500, max_rx_buf_len=1500)
             print("[INFO] WiFi activated")
             return True
         except Exception as e:
