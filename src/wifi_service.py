@@ -197,17 +197,18 @@ class WiFiService:
     
     def recv_data(self, buffer_size=1024):
         """
-        Receive data (blocking with short timeout)
+        Receive data (blocking)
         
         Args:
             buffer_size: Buffer size
             
         Returns:
-            str: Received data, or None if client disconnected
+            str: Received data
+            None: Client disconnected (clean close)
         """
         try:
             if self._client:
-                self._client.settimeout(1.0)  # Short timeout for responsive disconnect detection
+                self._client.settimeout(None)  # Blocking mode
                 data = self._client.recv(buffer_size)
                 if data:
                     msg = data.decode('utf-8')
@@ -215,15 +216,8 @@ class WiFiService:
                         self._msg_queue.publish("wifi/raw", msg)
                     return msg
                 else:
-                    # Empty data means client disconnected
+                    # Empty data means client disconnected (FIN packet)
                     return None
-            return None
-        except OSError as e:
-            if e.errno == 110:  # ETIMEDOUT - no data available
-                return ""  # Empty string, client still connected
-            print(f"[ERROR] WiFiService.recv_data: {e}")
-            import sys
-            sys.print_exception(e)
             return None
         except Exception as e:
             print(f"[ERROR] WiFiService.recv_data: {e}")
