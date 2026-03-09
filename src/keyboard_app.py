@@ -101,6 +101,10 @@ class KeyboardApp:
         """Run main loop (blocking)"""
         try:
             while self._running:
+                # Accept client connection (non-blocking)
+                if self._wifi.is_connected():
+                    self._wifi.accept_client()
+                
                 # WiFi data reception (non-blocking)
                 if self._wifi.is_connected():
                     data = self._wifi.recv_data()

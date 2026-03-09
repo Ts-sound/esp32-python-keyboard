@@ -126,17 +126,25 @@ class WiFiService:
     
     def accept_client(self):
         """
-        Accept client connection
+        Accept client connection (non-blocking)
         
         Returns:
             bool: Success status
         """
         try:
             if self._socket:
+                self._socket.setblocking(False)
                 self._client, addr = self._socket.accept()
                 self._client.settimeout(WIFI_SOCKET_TIMEOUT_SEC)
                 print(f"[INFO] Client connected: {addr}")
                 return True
+            return False
+        except OSError as e:
+            if e.errno == 11:  # EAGAIN - no connection pending (non-blocking)
+                return False
+            print(f"[ERROR] WiFiService.accept_client: {e}")
+            import sys
+            sys.print_exception(e)
             return False
         except Exception as e:
             print(f"[ERROR] WiFiService.accept_client: {e}")
