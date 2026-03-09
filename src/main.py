@@ -30,10 +30,17 @@ def main():
     
     if not app.start():
         print("[ERROR] Failed to start application")
+        Pin(LED_PIN, Pin.OUT).value(0)  # Turn off LED on error
         return
     
-    blink_led()
-    app.run()
+    # Turn on LED to indicate running
+    Pin(LED_PIN, Pin.OUT).value(1)
+    
+    try:
+        app.run()
+    finally:
+        # Turn off LED on exit
+        Pin(LED_PIN, Pin.OUT).value(0)
 
 
 if __name__ == "__main__":
