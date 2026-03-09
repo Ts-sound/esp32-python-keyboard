@@ -1,12 +1,13 @@
 import sys
+
+# 路径配置（必须在其他 import 之前）
+sys.path.insert(0, '/lib/MicroPythonBLEHID')
+sys.path.insert(0, '/src')
+
 from machine import Pin
 from config import LED_PIN
 from led_driver import blink_led
 from keyboard_app import KeyboardApp
-
-# 路径配置
-sys.path.insert(0, '/lib/MicroPythonBLEHID')
-sys.path.insert(0, '/src')
 
 
 def main():
