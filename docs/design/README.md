@@ -9,12 +9,13 @@ ESP32 Python Keyboard 是一个基于 MicroPython 的 BLE HID 键盘系统，采
 ```mermaid
 flowchart LR
     subgraph App["应用层"]
-        KA["keyboard_app.py<br/>应用入口，协调所有服务和设备"]
+        KA["keyboard_app.py<br/>asyncio 主循环，协调所有服务和设备"]
     end
     
     subgraph Services["服务层"]
-        WS["wifi_service.py<br/>WiFi 连接管理<br/>TCP 服务器<br/>客户端通信"]
-        RS["rf4_service.py<br/>RF4 自动按键<br/>JIG/PULL 模式<br/>消息队列控制"]
+        WS["wifi_service.py<br/>WiFi 连接管理<br/>TCP 服务器 (async 轮询)<br/>客户端通信"]
+        RS["rf4_service.py<br/>RF4 自动按键<br/>JIG/PULL 模式<br/>asyncio 后台任务"]
+        KS["keyboard_service.py<br/>WiFi 命令处理<br/>键盘按键映射"]
     end
     
     subgraph Devices["设备层"]
@@ -41,9 +42,11 @@ flowchart LR
     
     KA --> WS
     KA --> RS
+    KA --> KS
     WS --> MQ
     RS --> MQ
     RS --> KD
+    KS --> KD
     KA --> KD
     KD --> MPH
     WS --> NATIVE
@@ -80,6 +83,7 @@ sequenceDiagram
     participant Client as 客户端
     participant WS as WiFiService
     participant MQ as MessageQueue
+    participant KS as KeyboardService
     participant RS as RF4Service
     participant KD as KeyboardDevice
     participant HD as HIDDriver
@@ -87,10 +91,28 @@ sequenceDiagram
     
     Client->>WS: 发送命令
     WS->>MQ: publish("wifi/raw", cmd)
-    MQ->>RS: _handle_command()
+    MQ->>KS: _handle_command()
+    MQ->>RS: _handle_wifi_command()
+    KS->>KD: press/release()
     RS->>KD: press/release()
     KD->>HD: send_keys()
     HD->>BLE: 广播 HID 报告
+```
+
+### 2. asyncio 并发模型
+
+```mermaid
+flowchart TD
+    Main["asyncio.run(main_async())"] --> App["app.run_async()"]
+    App -->|RF4 任务 | RF4["rf4.run_async()"]
+    App --> WiFi["WiFi 主循环"]
+    RF4 --> JIG["jig_cycle_async()"]
+    RF4 --> PULL["pull_cycle_async()"]
+    WiFi --> Wait["wait_for_client_async()"]
+    WiFi --> Recv["recv_data_async()"]
+    Recv --> MQ["publish wifi/raw"]
+    MQ --> KS["keyboard_service 回调"]
+    MQ --> RS["rf4_service 回调"]
 ```
 
 ### 2. HID 报告发送流程
@@ -179,7 +201,7 @@ esp32-python-keyboard/
 
 ## 后续优化项
 
-### 异常处理增强
+### 1. 异常处理增强
 
 建议在 `main.py` 中添加崩溃后自动重启功能：
 
@@ -187,7 +209,7 @@ esp32-python-keyboard/
 import machine
 
 try:
-    app.run()
+    await app.run_async()
 except KeyboardInterrupt:
     print("Interrupted by user")
 except Exception as e:
@@ -203,3 +225,122 @@ finally:
 - 调试时可按 Ctrl+C 进入 REPL
 
 **当前状态：** 暂未实现，作为可选优化项。
+
+---
+
+### 2. JSON 消息格式支持
+
+当前使用纯文本命令格式，建议升级为 JSON 格式以支持更复杂的命令结构。
+
+#### 当前格式（纯文本）
+
+```
+# RF4 控制
+jig;800;500
+pull;1000;600
+clear
+
+# 键盘控制
+shift;a
+ctrl;s
+enter
+```
+
+**问题：**
+- 参数解析依赖分号位置，容易出错
+- 无法表达复杂命令（如组合键、宏）
+- 无错误处理机制
+
+#### 建议格式（JSON）
+
+```json
+{
+  "type": "rf4",
+  "action": "jig",
+  "params": {
+    "press_ms": 800,
+    "release_ms": 500
+  }
+}
+```
+
+```json
+{
+  "type": "keyboard",
+  "action": "press",
+  "params": {
+    "keys": ["ctrl", "s"],
+    "modifiers": {"shift": true}
+  }
+}
+```
+
+```json
+{
+  "type": "keyboard",
+  "action": "macro",
+  "params": {
+    "sequence": [
+      {"keys": ["h"], "delay_ms": 50},
+      {"keys": ["e"], "delay_ms": 50},
+      {"keys": ["l"], "delay_ms": 50},
+      {"keys": ["l"], "delay_ms": 50},
+      {"keys": ["o"], "delay_ms": 50}
+    ]
+  }
+}
+```
+
+#### 实现建议
+
+**1. 消息解析层**
+
+```python
+# src/message_parser.py
+import json
+
+class MessageParser:
+    def parse(self, raw_msg):
+        try:
+            msg = json.loads(raw_msg)
+            return msg  # dict
+        except json.JSONDecodeError:
+            # 兼容旧格式，按分号解析
+            return self._parse_legacy(raw_msg)
+    
+    def _parse_legacy(self, msg):
+        parts = msg.split(';')
+        if parts[0] in ('jig', 'pull'):
+            return {
+                'type': 'rf4',
+                'action': parts[0],
+                'params': {'press_ms': int(parts[1]), 'release_ms': int(parts[2])}
+            }
+        # ... 其他命令
+```
+
+**2. 服务层修改**
+
+```python
+# keyboard_service.py
+def _handle_command(self, raw_msg):
+    msg = self._parser.parse(raw_msg)
+    
+    if msg['type'] == 'rf4':
+        # 转发到 RF4
+        self._msg_queue.publish('rf4/control', json.dumps(msg))
+    elif msg['type'] == 'keyboard':
+        self._handle_keyboard_cmd(msg)
+```
+
+**优点：**
+- 结构清晰，参数命名明确
+- 支持复杂命令（宏、组合键、条件执行）
+- 易于扩展新命令类型
+- 兼容旧格式（渐进式升级）
+
+**缺点：**
+- 增加 JSON 解析开销（MicroPython 的 `json` 模块较慢）
+- 消息体积略大
+
+**当前状态：** 建议作为后续优化项，当前保持纯文本格式。

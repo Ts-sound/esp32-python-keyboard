@@ -8,6 +8,7 @@
 - **WiFi 控制**: 通过 TCP 接收远程命令
 - **RF4 自动按键**: 支持 JIG 和 PULL 两种自动按键模式
 - **消息队列**: 模块间通信的发布/订阅机制
+- **asyncio 并发**: 基于 asyncio 的并发模型，RF4 后台运行
 
 ## 项目结构
 
@@ -103,6 +104,8 @@ WIFI_PASSWORD = "你的 WiFi 密码"
 
 ### 命令格式
 
+#### 纯文本格式（当前支持）
+
 ```
 # RF4 控制
 jig;press_ms;release_ms     # JIG 模式
@@ -113,7 +116,17 @@ clear                       # 停止自动按键
 shift;a                     # Shift+A
 ctrl;s                      # Ctrl+S
 enter                       # 回车键
+a                           # 按下 'a' 键
 ```
+
+#### JSON 格式（建议优化）
+
+```json
+{"type": "rf4", "action": "jig", "params": {"press_ms": 800, "release_ms": 500}}
+{"type": "keyboard", "action": "press", "params": {"keys": ["ctrl", "s"]}}
+```
+
+详见 [设计文档](docs/design/README.md) 中的 "JSON 消息格式支持" 章节。
 
 ## 配置说明
 
@@ -148,7 +161,19 @@ python -m pytest test_hid_mapper.py -v
 2. 测试键盘输入
 3. 发送 WiFi 命令验证
 
-## 依赖
+## 架构说明
+
+本项目采用分层架构设计，使用 asyncio 实现并发：
+
+```
+main.py (asyncio 入口)
+    └── keyboard_app.py (asyncio 主循环)
+        ├── RF4 后台任务 (asyncio.create_task)
+        ├── WiFi 服务 (async 轮询)
+        └── keyboard_service (消息队列回调)
+```
+
+详见 [设计文档](docs/design/README.md)。
 
 - **MicroPythonBLEHID**: https://github.com/Heerkog/MicroPythonBLEHID.git
 - **MicroPython**: v1.23+
@@ -184,7 +209,7 @@ python -m pytest test_hid_mapper.py -v
 - `scripts/upload.py` - 使用 mpremote 上传代码到 ESP32
 - `scripts/test.py` - 运行单元测试
 
-## 许可证
+## 依赖
 
 项目代码采用 GPL-3.0 许可证（与 MicroPythonBLEHID 保持一致）。
 
