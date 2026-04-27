@@ -286,15 +286,16 @@ class TestKeyboardService(unittest.TestCase):
         self.assertTrue(result['success'])
         self.script_engine.stop.assert_called_once()
 
-    # ========== Script Run (Error) ==========
+    # ========== Script Run ==========
 
-    def test_script_run_returns_error(self):
-        """测试脚本 run 返回错误（需要异步执行）"""
+    def test_script_run_queues_script(self):
+        """测试脚本 run 调用 queue_run"""
+        self.script_engine.queue_run.return_value = {"success": True, "message": "OK"}
         result = self.service.handle_command(
             '{"v":1,"type":"script","action":"run","params":{"name":"test"}}'
         )
-        self.assertFalse(result['success'])
-        self.assertIn('async_run', result['message'])
+        self.assertTrue(result['success'])
+        self.script_engine.queue_run.assert_called_once_with(name="test")
 
     # ========== Message Queue Integration ==========
 

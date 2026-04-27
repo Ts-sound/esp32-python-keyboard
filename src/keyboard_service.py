@@ -246,18 +246,6 @@ class KeyboardService:
         elif action == "stop":
             return self._script_engine.stop()
         elif action == "run":
-            return {"success": False, "message": "Use async_run for script execution"}
+            return self._script_engine.queue_run(name=params["name"])
         
         return {"success": False, "message": f"Unknown script action: {action}"}
-    
-    async def async_run_script(self, name):
-        """
-        Async run script (for use with asyncio event loop)
-        
-        Args:
-            name: Script name
-            
-        Returns:
-            dict: Response
-        """
-        return await self._script_engine.run(name, self._keyboard)

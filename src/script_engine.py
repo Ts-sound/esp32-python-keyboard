@@ -22,14 +22,21 @@ class ScriptEngine:
     - Store up to MAX_SCRIPTS scripts
     - Upload, delete, list operations
     - Script format: {name: {steps: [...], loop: bool}}
+    - Background task for script execution
     """
     
     IDLE = 0
     RUNNING = 1
     PAUSED = 2
     
-    def __init__(self):
-        """Initialize script engine with empty storage"""
+    def __init__(self, keyboard_device=None):
+        """
+        Initialize script engine with empty storage
+        
+        Args:
+            keyboard_device: KeyboardDevice instance (required for background execution)
+        """
+        self._keyboard = keyboard_device
         self._scripts = {}
         self._state = self.IDLE
         self._current_script = None
@@ -39,6 +46,7 @@ class ScriptEngine:
         self._max_loops = 1
         self._pause_event = None
         self._stop_flag = False
+        self._pending_script = None
     
     def upload(self, name, steps, loop=False, variance_ms=0):
         """
@@ -242,3 +250,44 @@ class ScriptEngine:
         """
         delay = int(random.uniform(base_ms - variance_ms, base_ms + variance_ms))
         await asyncio.sleep_ms(delay)
+    
+    def queue_run(self, name):
+        """
+        Queue a script for background execution
+        
+        Args:
+            name: Script name
+            
+        Returns:
+            dict: {success: bool, message: str}
+        """
+        if name not in self._scripts:
+            return {"success": False, "message": f"Script not found: {name}"}
+        
+        if self._state == self.RUNNING:
+            return {"success": False, "message": "Script already running"}
+        
+        self._pending_script = name
+        return {"success": True, "message": "OK"}
+    
+    async def run_async_script(self):
+        """
+        Background task that runs queued scripts.
+        Runs forever, checking for pending scripts.
+        """
+        while True:
+            try:
+                if self._pending_script and self._state == self.IDLE:
+                    script_name = self._pending_script
+                    self._pending_script = None
+                    if self._keyboard:
+                        await self.run(script_name, self._keyboard)
+                await asyncio.sleep_ms(100)
+            except asyncio.CancelledError:
+                print("[INFO] ScriptEngine background task cancelled")
+                break
+            except Exception as e:
+                print(f"[ERROR] ScriptEngine.run_async_script: {e}")
+                import sys
+                sys.print_exception(e)
+                await asyncio.sleep_ms(1000)
