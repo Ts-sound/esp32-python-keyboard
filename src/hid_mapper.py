@@ -62,6 +62,17 @@ HID_MODIFIERS = {
     'right_gui': 0x80,
 }
 
+MODIFIER_KEY_ALIASES = {
+    'ctrl': 'left_control',
+    'control': 'left_control',
+    'shift': 'left_shift',
+    'alt': 'left_alt',
+    'win': 'left_gui',
+    'gui': 'left_gui',
+    'meta': 'left_gui',
+    'cmd': 'left_gui',
+}
+
 
 def get_hid_code(key_str):
     """
