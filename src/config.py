@@ -49,6 +49,11 @@ MSG_QUEUE_MAX_SIZE = const(10)
 MSG_QUEUE_DEFAULT_TIMEOUT_MS = const(0)
 
 # ====================
+# Script Engine Configuration
+# ====================
+MAX_SCRIPTS = const(5)
+
+# ====================
 # System Configuration
 # ====================
 MAIN_LOOP_INTERVAL_MS = const(100)
