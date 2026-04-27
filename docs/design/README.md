@@ -14,8 +14,12 @@ flowchart LR
     
     subgraph Services["服务层"]
         WS["wifi_service.py<br/>WiFi 连接管理<br/>TCP 服务器 (async 轮询)<br/>客户端通信"]
-        RS["rf4_service.py<br/>RF4 自动按键<br/>JIG/PULL 模式<br/>asyncio 后台任务"]
         KS["keyboard_service.py<br/>WiFi 命令处理<br/>键盘按键映射"]
+        SE["script_engine.py<br/>脚本存储与执行<br/>循环与暂停控制<br/>asyncio 后台任务"]
+    end
+    
+    subgraph Parsers["解析层"]
+        PP["protocol_parser.py<br/>JSON 协议解析<br/>命令验证<br/>错误处理"]
     end
     
     subgraph Devices["设备层"]
@@ -41,12 +45,13 @@ flowchart LR
     end
     
     KA --> WS
-    KA --> RS
     KA --> KS
-    WS --> MQ
-    RS --> MQ
-    RS --> KD
+    KA --> SE
+    WS --> PP
+    PP --> KS
+    PP --> SE
     KS --> KD
+    SE --> KD
     KA --> KD
     KD --> MPH
     WS --> NATIVE
@@ -61,15 +66,19 @@ flowchart LR
     KA[keyboard_app] --> MQ[MessageQueue]
     KA --> KD[KeyboardDevice]
     KA --> WS[WiFiService]
-    KA --> RS[RF4Service]
+    KA --> SE[ScriptEngine]
     
     KD --> HSK[hid_services.Keyboard]
     KD --> HM[HID_KEYMAP]
     
     WS --> NET[network, socket]
+    WS --> PP[ProtocolParser]
     
-    RS --> KD
-    RS --> MQ
+    PP --> KS[KeyboardService]
+    PP --> SE
+    
+    KS --> KD
+    SE --> KD
     
     LD[LEDDriver] --> CFG[config]
 ```
@@ -82,21 +91,27 @@ flowchart LR
 sequenceDiagram
     participant Client as 客户端
     participant WS as WiFiService
-    participant MQ as MessageQueue
+    participant PP as ProtocolParser
     participant KS as KeyboardService
-    participant RS as RF4Service
+    participant SE as ScriptEngine
     participant KD as KeyboardDevice
     participant HD as HIDDriver
     participant BLE as BLE 广播
     
-    Client->>WS: 发送命令
-    WS->>MQ: publish("wifi/raw", cmd)
-    MQ->>KS: _handle_command()
-    MQ->>RS: _handle_wifi_command()
-    KS->>KD: press/release()
-    RS->>KD: press/release()
+    Client->>WS: 发送 JSON 命令
+    WS->>PP: parse(json_str)
+    PP->>PP: 验证格式和字段
+    alt 键盘命令
+        PP->>KS: handle_keyboard(cmd)
+        KS->>KD: press/release/type()
+    else 脚本命令
+        PP->>SE: handle_script(cmd)
+        SE->>SE: 执行脚本步骤
+        SE->>KD: press/release()
+    end
     KD->>HD: send_keys()
     HD->>BLE: 广播 HID 报告
+    WS-->>Client: JSON 响应
 ```
 
 ### 2. asyncio 并发模型
@@ -104,15 +119,14 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     Main["asyncio.run(main_async())"] --> App["app.run_async()"]
-    App -->|RF4 任务 | RF4["rf4.run_async()"]
+    App -->|脚本任务 | SE["script_engine.run_async()"]
     App --> WiFi["WiFi 主循环"]
-    RF4 --> JIG["jig_cycle_async()"]
-    RF4 --> PULL["pull_cycle_async()"]
+    SE --> Loop["loop_cycle_async()"]
     WiFi --> Wait["wait_for_client_async()"]
     WiFi --> Recv["recv_data_async()"]
-    Recv --> MQ["publish wifi/raw"]
-    MQ --> KS["keyboard_service 回调"]
-    MQ --> RS["rf4_service 回调"]
+    Recv --> PP["ProtocolParser.parse()"]
+    PP --> KS["keyboard_service 处理"]
+    PP --> SE["script_engine 处理"]
 ```
 
 ### 2. HID 报告发送流程
@@ -141,16 +155,18 @@ flowchart TD
 
 ### KeyboardApp 状态
 - `_running`: 运行标志
-- 组件引用：`_msg_queue`, `_keyboard`, `_wifi`, `_rf4`
+- 组件引用：`_msg_queue`, `_keyboard`, `_wifi`, `_script_engine`
 
 ### WiFiService 状态
 - `_connected`: WiFi 连接状态
 - `_socket`: TCP 服务器 socket
 - `_client`: 客户端连接
 
-### RF4Service 状态
-- `_state`: IDLE / JIG / PULL
-- `_time_press`, `_time_release`: 时序参数
+### ScriptEngine 状态
+- `_scripts`: 脚本字典 (name → steps)
+- `_running`: 运行标志
+- `_paused`: 暂停标志
+- `_current_script`: 当前脚本名称
 
 ### HIDDriver 状态
 - `_connected`: BLE 连接状态（通过回调更新）
@@ -189,14 +205,16 @@ esp32-python-keyboard/
 ├── boot.py              # ESP32 启动脚本（保留空文件）
 ├── main.py              # 应用入口（设备上 /main.py）
 └── src/
-    ├── config.py        # 统一配置
-    ├── keyboard_app.py  # 应用协调器
+    ├── config.py            # 统一配置
+    ├── keyboard_app.py      # 应用协调器
     ├── keyboard_device.py   # 键盘设备（直接使用 hid_services）
+    ├── keyboard_service.py  # 键盘命令处理
+    ├── protocol_parser.py   # JSON 协议解析器
+    ├── script_engine.py     # 脚本引擎
     ├── hid_mapper.py        # HID 映射表
     ├── led_driver.py        # LED 驱动
     ├── msg_queue.py         # 消息队列
-    ├── wifi_service.py      # WiFi 服务
-    └── rf4_service.py       # RF4 服务
+    └── wifi_service.py      # WiFi 服务
 ```
 
 ## 后续优化项
@@ -225,122 +243,3 @@ finally:
 - 调试时可按 Ctrl+C 进入 REPL
 
 **当前状态：** 暂未实现，作为可选优化项。
-
----
-
-### 2. JSON 消息格式支持
-
-当前使用纯文本命令格式，建议升级为 JSON 格式以支持更复杂的命令结构。
-
-#### 当前格式（纯文本）
-
-```
-# RF4 控制
-jig;800;500
-pull;1000;600
-clear
-
-# 键盘控制
-shift;a
-ctrl;s
-enter
-```
-
-**问题：**
-- 参数解析依赖分号位置，容易出错
-- 无法表达复杂命令（如组合键、宏）
-- 无错误处理机制
-
-#### 建议格式（JSON）
-
-```json
-{
-  "type": "rf4",
-  "action": "jig",
-  "params": {
-    "press_ms": 800,
-    "release_ms": 500
-  }
-}
-```
-
-```json
-{
-  "type": "keyboard",
-  "action": "press",
-  "params": {
-    "keys": ["ctrl", "s"],
-    "modifiers": {"shift": true}
-  }
-}
-```
-
-```json
-{
-  "type": "keyboard",
-  "action": "macro",
-  "params": {
-    "sequence": [
-      {"keys": ["h"], "delay_ms": 50},
-      {"keys": ["e"], "delay_ms": 50},
-      {"keys": ["l"], "delay_ms": 50},
-      {"keys": ["l"], "delay_ms": 50},
-      {"keys": ["o"], "delay_ms": 50}
-    ]
-  }
-}
-```
-
-#### 实现建议
-
-**1. 消息解析层**
-
-```python
-# src/message_parser.py
-import json
-
-class MessageParser:
-    def parse(self, raw_msg):
-        try:
-            msg = json.loads(raw_msg)
-            return msg  # dict
-        except json.JSONDecodeError:
-            # 兼容旧格式，按分号解析
-            return self._parse_legacy(raw_msg)
-    
-    def _parse_legacy(self, msg):
-        parts = msg.split(';')
-        if parts[0] in ('jig', 'pull'):
-            return {
-                'type': 'rf4',
-                'action': parts[0],
-                'params': {'press_ms': int(parts[1]), 'release_ms': int(parts[2])}
-            }
-        # ... 其他命令
-```
-
-**2. 服务层修改**
-
-```python
-# keyboard_service.py
-def _handle_command(self, raw_msg):
-    msg = self._parser.parse(raw_msg)
-    
-    if msg['type'] == 'rf4':
-        # 转发到 RF4
-        self._msg_queue.publish('rf4/control', json.dumps(msg))
-    elif msg['type'] == 'keyboard':
-        self._handle_keyboard_cmd(msg)
-```
-
-**优点：**
-- 结构清晰，参数命名明确
-- 支持复杂命令（宏、组合键、条件执行）
-- 易于扩展新命令类型
-- 兼容旧格式（渐进式升级）
-
-**缺点：**
-- 增加 JSON 解析开销（MicroPython 的 `json` 模块较慢）
-- 消息体积略大
-
-**当前状态：** 建议作为后续优化项，当前保持纯文本格式。

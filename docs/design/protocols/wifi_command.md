@@ -1,4 +1,8 @@
-# WiFi 远程控制协议规格
+# WiFi 远程控制协议规格 (Legacy)
+
+> **注意**: 此文档描述的是旧版纯文本协议，已被 [JSON 协议 v1.0](json_protocol.md) 替代。
+> 
+> 保留此文档仅作为历史参考。新项目请使用 JSON 协议。
 
 ## 概述
 
@@ -175,3 +179,18 @@ send_command("192.168.1.100", 80, "clear")
 
 - 未知命令：ESP32 输出 `[WARN] unknown command`
 - 参数错误：ESP32 使用默认值或忽略命令
+
+## 迁移指南
+
+旧版命令可按以下方式迁移到 JSON 协议：
+
+| 旧命令 | JSON 协议 |
+|--------|-----------|
+| `jig;800;500` | `{"v":1,"type":"script","action":"run","params":{"name":"jig"}}` (需先 upload 脚本) |
+| `pull;1000;600` | `{"v":1,"type":"script","action":"run","params":{"name":"pull"}}` |
+| `clear` | `{"v":1,"type":"script","action":"stop"}` |
+| `a` | `{"v":1,"type":"keyboard","action":"press","params":{"keys":["a"]}}` |
+| `ctrl+s` | `{"v":1,"type":"keyboard","action":"press","params":{"keys":["ctrl","s"]}}` |
+| `type:Hello` | `{"v":1,"type":"keyboard","action":"type","params":{"text":"Hello"}}` |
+
+详见 [JSON 协议 v1.0](json_protocol.md)。
