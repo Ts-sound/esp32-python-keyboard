@@ -126,6 +126,9 @@ WIFI_PASSWORD = "你的 WiFi 密码"
 {"v": 1, "type": "script", "action": "run", "params": {"name": "jig"}}
 {"v": 1, "type": "script", "action": "stop"}
 {"v": 1, "type": "script", "action": "status"}
+
+// 保存脚本到文件（持久化）
+{"v": 1, "type": "script", "action": "save"}
 ```
 
 完整协议文档见 [docs/design/protocols/json_protocol.md](docs/design/protocols/json_protocol.md)。
@@ -139,6 +142,8 @@ WIFI_PASSWORD = "你的 WiFi 密码"
 | `WIFI_SSID` | "T" | WiFi 名称 |
 | `WIFI_PASSWORD` | "12345678" | WiFi 密码 |
 | `HID_DEVICE_NAME` | "ESP32-Keyboard" | BLE 设备名称 |
+| `MAX_SCRIPTS` | 5 | 最大脚本数量 |
+| `SCRIPTS_FILE` | "config/scripts.json" | 脚本持久化文件 |
 
 ## 测试
 

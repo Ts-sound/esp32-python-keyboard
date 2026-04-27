@@ -368,12 +368,22 @@ JSON 协议 v1.0 替代原有的纯文本命令格式，提供结构化的命令
 
 ### 修饰键
 
-| 名称 | HID 键码 |
-|------|----------|
-| `ctrl` | Left Control |
-| `shift` | Left Shift |
-| `alt` | Left Alt |
-| `win` | Left GUI (Windows/Command) |
+以下别名都支持：
+
+| 名称 | 别名 | HID 修饰键 |
+|------|------|------------|
+| `ctrl` | `control` | Left Control |
+| `shift` | - | Left Shift |
+| `alt` | `option` | Left Alt |
+| `win` | `gui`, `meta`, `cmd` | Left GUI (Windows/Command/Super) |
+
+**组合键示例：**
+```json
+{"keys": ["ctrl", "s"]}      // Ctrl+S 保存
+{"keys": ["win", "b"]}       // Win+B 任务栏
+{"keys": ["alt", "f4"]}      // Alt+F4 关闭窗口
+{"keys": ["shift", "a"]}     // Shift+A 大写 A
+```
 
 ### 常用键
 
@@ -399,9 +409,18 @@ JSON 协议 v1.0 替代原有的纯文本命令格式，提供结构化的命令
 | 未知 action | `Unknown action: xxx` |
 | 脚本不存在 | `Script not found: xxx` |
 | 脚本数量超限 | `Script limit reached (max 5)` |
-| 脚本已存在 | `Script already exists: xxx` |
 | 无脚本运行 | `No script running` |
 | 脚本未暂停 | `Script not paused` |
+| 脚本已在运行 | `Script already running` |
+
+## 文件持久化
+
+脚本可通过 `save` action 持久化到 `config/scripts.json`：
+
+- **启动时自动加载**：ScriptEngine 初始化时读取 `config/scripts.json`
+- **upload/delete 仅修改 RAM**：不会自动写入文件，防止覆盖
+- **显式 save**：调用 `save` action 才会持久化
+- **文件格式**：list `[{"name": "jig", "steps": [...], ...}, ...]`
 
 ## Python 客户端示例
 

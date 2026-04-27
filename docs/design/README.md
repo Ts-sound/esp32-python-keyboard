@@ -148,7 +148,8 @@ flowchart TD
     Pub[发布者<br/>WiFiService] -->|publish| MQ[MessageQueue]
     MQ --> Q[加入队列<br/>poll 可获取]
     MQ --> Sub[invoke_subscribers]
-    Sub --> CB[订阅者回调<br/>RF4Service]
+    Sub --> CB1[订阅者回调<br/>KeyboardService]
+    Sub --> CB2[订阅者回调<br/>WiFiService]
 ```
 
 ## 状态管理
@@ -163,10 +164,13 @@ flowchart TD
 - `_client`: 客户端连接
 
 ### ScriptEngine 状态
-- `_scripts`: 脚本字典 (name → steps)
-- `_running`: 运行标志
-- `_paused`: 暂停标志
+- `_scripts`: 脚本字典 (name → {steps, loop, variance_ms})
+- `_state`: 运行状态 (IDLE/RUNNING/PAUSED)
 - `_current_script`: 当前脚本名称
+- `_current_step`: 当前步骤索引
+- `_loop_count`: 循环计数
+- `_pause_event`: asyncio.Event 用于暂停/恢复
+- `_pending_script`: 待执行的脚本名称
 
 ### HIDDriver 状态
 - `_connected`: BLE 连接状态（通过回调更新）
@@ -193,7 +197,7 @@ except Exception as e:
 | 类别 | 配置项 |
 |------|--------|
 | WiFi | SSID, PASSWORD, PORT, TIMEOUT |
-| RF4 | JIG_PRESS_MS, JIG_RELEASE_MS, PULL_*, VARIANCE |
+| Script | MAX_SCRIPTS, SCRIPTS_FILE |
 | HID | DEVICE_NAME, BATTERY_LEVEL, REPORT_INTERVAL |
 | 硬件 | LED_PIN, BLINK_* |
 | 系统 | MAIN_LOOP_INTERVAL_MS, DEBUG_ENABLED |
@@ -204,14 +208,16 @@ except Exception as e:
 esp32-python-keyboard/
 ├── boot.py              # ESP32 启动脚本（保留空文件）
 ├── main.py              # 应用入口（设备上 /main.py）
+├── config/              # 配置文件目录
+│   └── scripts.json     # 脚本持久化存储
 └── src/
     ├── config.py            # 统一配置
     ├── keyboard_app.py      # 应用协调器
     ├── keyboard_device.py   # 键盘设备（直接使用 hid_services）
     ├── keyboard_service.py  # 键盘命令处理
     ├── protocol_parser.py   # JSON 协议解析器
-    ├── script_engine.py     # 脚本引擎
-    ├── hid_mapper.py        # HID 映射表
+    ├── script_engine.py     # 脚本引擎（支持文件持久化）
+    ├── hid_mapper.py        # HID 映射表（含修饰键别名）
     ├── led_driver.py        # LED 驱动
     ├── msg_queue.py         # 消息队列
     └── wifi_service.py      # WiFi 服务
