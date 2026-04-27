@@ -49,28 +49,32 @@ class ScriptEngine:
     
     def _load_from_file(self):
         try:
-            if not os.path.exists(SCRIPTS_FILE):
-                return
-            with open(SCRIPTS_FILE, 'r') as f:
-                data = json.load(f)
-                if isinstance(data, list):
-                    for script in data:
-                        name = script.get("name")
-                        if name and len(self._scripts) < MAX_SCRIPTS:
-                            self._scripts[name] = {
-                                "steps": script.get("steps", []),
-                                "loop": script.get("loop", False),
-                                "variance_ms": script.get("variance_ms", 0)
-                            }
-            print(f"[INFO] Loaded {len(self._scripts)} scripts from {SCRIPTS_FILE}")
+            try:
+                with open(SCRIPTS_FILE, 'r') as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        for script in data:
+                            name = script.get("name")
+                            if name and len(self._scripts) < MAX_SCRIPTS:
+                                self._scripts[name] = {
+                                    "steps": script.get("steps", []),
+                                    "loop": script.get("loop", False),
+                                    "variance_ms": script.get("variance_ms", 0)
+                                }
+                    print(f"[INFO] Loaded {len(self._scripts)} scripts from {SCRIPTS_FILE}")
+            except OSError:
+                pass
         except Exception as e:
             print(f"[WARN] Failed to load scripts: {e}")
     
     def _save_to_file(self):
         try:
             dir_path = SCRIPTS_FILE.rsplit('/', 1)[0]
-            if dir_path and not os.path.exists(dir_path):
-                os.mkdir(dir_path)
+            if dir_path:
+                try:
+                    os.listdir(dir_path)
+                except OSError:
+                    os.mkdir(dir_path)
             
             scripts_list = []
             for name, script in self._scripts.items():
