@@ -202,5 +202,122 @@ class TestScriptEngineExecution(unittest.TestCase):
         self.assertEqual(mock_sleep.call_count, 2)
 
 
+class TestScriptEngineControl(unittest.TestCase):
+    """Script Engine Control Operations Test Class"""
+
+    def setUp(self):
+        """Setup before each test"""
+        self.engine = ScriptEngine()
+        self.keyboard = MagicMock()
+        self.keyboard.press = MagicMock()
+        self.keyboard.release = MagicMock()
+        self.keyboard.release_all = MagicMock()
+
+    def _run_async(self, coro):
+        """Helper to run async tests"""
+        return asyncio.get_event_loop().run_until_complete(coro)
+
+    def test_pause_when_idle_fails(self):
+        """Test pause fails when no script running"""
+        result = self.engine.pause()
+        self.assertFalse(result["success"])
+        self.assertEqual(result["message"], "No script running")
+
+    def test_resume_when_idle_fails(self):
+        """Test resume fails when not paused"""
+        result = self.engine.resume()
+        self.assertFalse(result["success"])
+        self.assertEqual(result["message"], "Script not paused")
+
+    def test_stop_when_idle_fails(self):
+        """Test stop fails when no script running"""
+        result = self.engine.stop()
+        self.assertFalse(result["success"])
+        self.assertEqual(result["message"], "No script running")
+
+    def test_status_when_idle(self):
+        """Test status returns idle state"""
+        result = self.engine.status()
+        self.assertTrue(result["success"])
+        self.assertFalse(result["data"]["running"])
+        self.assertFalse(result["data"]["paused"])
+        self.assertIsNone(result["data"]["script"])
+        self.assertEqual(result["data"]["step"], 0)
+        self.assertEqual(result["data"]["loop_count"], 0)
+
+    @patch('script_engine.asyncio.sleep_ms', new_callable=AsyncMock)
+    def test_pause_sets_paused_state(self, mock_sleep):
+        """Test pause sets state to paused"""
+        self.engine._state = self.engine.RUNNING
+        self.engine._pause_event = asyncio.Event()
+        self.engine._pause_event.set()
+        
+        result = self.engine.pause()
+        self.assertTrue(result["success"])
+        self.assertEqual(self.engine._state, self.engine.PAUSED)
+        self.assertFalse(self.engine._pause_event.is_set())
+
+    @patch('script_engine.asyncio.sleep_ms', new_callable=AsyncMock)
+    def test_resume_sets_running_state(self, mock_sleep):
+        """Test resume sets state to running"""
+        self.engine._state = self.engine.PAUSED
+        self.engine._pause_event = asyncio.Event()
+        self.engine._pause_event.clear()
+        
+        result = self.engine.resume()
+        self.assertTrue(result["success"])
+        self.assertEqual(self.engine._state, self.engine.RUNNING)
+        self.assertTrue(self.engine._pause_event.is_set())
+
+    @patch('script_engine.asyncio.sleep_ms', new_callable=AsyncMock)
+    def test_stop_stops_execution(self, mock_sleep):
+        """Test stop stops script execution"""
+        self.engine.upload("test", [
+            {"keys": ["a"], "press_ms": 50, "release_ms": 50}
+        ], loop=3, variance_ms=0)
+
+        self.engine._state = self.engine.RUNNING
+        self.engine._current_script = "test"
+        self.engine._total_steps = 1
+        self.engine._max_loops = 3
+        self.engine._loop_count = 0
+        self.engine._pause_event = asyncio.Event()
+        self.engine._pause_event.set()
+
+        result = self.engine.stop()
+        self.assertTrue(result["success"])
+        self.assertTrue(self.engine._stop_flag)
+
+    @patch('script_engine.asyncio.sleep_ms', new_callable=AsyncMock)
+    def test_resume_fails_when_not_paused(self, mock_sleep):
+        """Test resume fails when not in paused state"""
+        self.engine._state = self.engine.RUNNING
+        result = self.engine.resume()
+        self.assertFalse(result["success"])
+        self.assertEqual(result["message"], "Script not paused")
+
+    def test_status_after_upload(self):
+        """Test status after uploading script"""
+        self.engine.upload("test", [
+            {"keys": ["a"], "press_ms": 50, "release_ms": 50}
+        ], loop=2, variance_ms=0)
+        
+        self.engine._current_script = "test"
+        self.engine._total_steps = 1
+        self.engine._max_loops = 2
+        
+        result = self.engine.status()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["data"]["max_loops"], 2)
+
+    def test_status_shows_infinite_loop(self):
+        """Test status shows True for infinite loop"""
+        self.engine.upload("test", [], loop=True)
+        self.engine._max_loops = None
+        
+        result = self.engine.status()
+        self.assertTrue(result["data"]["max_loops"])
+
+
 if __name__ == "__main__":
     unittest.main()
