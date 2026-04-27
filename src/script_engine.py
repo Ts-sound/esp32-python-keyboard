@@ -68,6 +68,10 @@ class ScriptEngine:
     
     def _save_to_file(self):
         try:
+            dir_path = SCRIPTS_FILE.rsplit('/', 1)[0]
+            if dir_path and not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+            
             scripts_list = []
             for name, script in self._scripts.items():
                 scripts_list.append({
