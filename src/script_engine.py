@@ -2,12 +2,15 @@
 Script Engine Module
 
 Manages script storage and basic operations.
+Supports file persistence for scripts.
 """
 
 import asyncio
+import json
+import os
 import random
 
-from config import MAX_SCRIPTS
+from config import MAX_SCRIPTS, SCRIPTS_FILE
 
 
 DEFAULT_PRESS_MS = 50
@@ -30,12 +33,6 @@ class ScriptEngine:
     PAUSED = 2
     
     def __init__(self, keyboard_device=None):
-        """
-        Initialize script engine with empty storage
-        
-        Args:
-            keyboard_device: KeyboardDevice instance (required for background execution)
-        """
         self._keyboard = keyboard_device
         self._scripts = {}
         self._state = self.IDLE
@@ -47,20 +44,47 @@ class ScriptEngine:
         self._pause_event = None
         self._stop_flag = False
         self._pending_script = None
+        
+        self._load_from_file()
+    
+    def _load_from_file(self):
+        try:
+            if not os.path.exists(SCRIPTS_FILE):
+                return
+            with open(SCRIPTS_FILE, 'r') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    for script in data:
+                        name = script.get("name")
+                        if name and len(self._scripts) < MAX_SCRIPTS:
+                            self._scripts[name] = {
+                                "steps": script.get("steps", []),
+                                "loop": script.get("loop", False),
+                                "variance_ms": script.get("variance_ms", 0)
+                            }
+            print(f"[INFO] Loaded {len(self._scripts)} scripts from {SCRIPTS_FILE}")
+        except Exception as e:
+            print(f"[WARN] Failed to load scripts: {e}")
+    
+    def _save_to_file(self):
+        try:
+            scripts_list = []
+            for name, script in self._scripts.items():
+                scripts_list.append({
+                    "name": name,
+                    "steps": script.get("steps", []),
+                    "loop": script.get("loop", False),
+                    "variance_ms": script.get("variance_ms", 0)
+                })
+            with open(SCRIPTS_FILE, 'w') as f:
+                json.dump(scripts_list, f)
+            print(f"[INFO] Saved {len(self._scripts)} scripts to {SCRIPTS_FILE}")
+        except Exception as e:
+            print(f"[ERROR] Failed to save scripts: {e}")
+            import sys
+            sys.print_exception(e)
     
     def upload(self, name, steps, loop=False, variance_ms=0):
-        """
-        Upload or update a script
-        
-        Args:
-            name: Script name
-            steps: List of step dictionaries
-            loop: Whether script should loop
-            variance_ms: Random variance in milliseconds
-            
-        Returns:
-            dict: {success: bool, message: str}
-        """
         if name not in self._scripts and len(self._scripts) >= MAX_SCRIPTS:
             return {"success": False, "message": f"Script limit reached (max {MAX_SCRIPTS})"}
         
@@ -71,16 +95,17 @@ class ScriptEngine:
         }
         return {"success": True, "message": "OK"}
     
-    def delete(self, name):
+    def save(self):
         """
-        Delete a script
+        Save all scripts to file
         
-        Args:
-            name: Script name
-            
         Returns:
             dict: {success: bool, message: str}
         """
+        self._save_to_file()
+        return {"success": True, "message": "OK"}
+    
+    def delete(self, name):
         if name not in self._scripts:
             return {"success": False, "message": f"Script not found: {name}"}
         

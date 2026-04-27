@@ -247,5 +247,7 @@ class KeyboardService:
             return self._script_engine.stop()
         elif action == "run":
             return self._script_engine.queue_run(name=params["name"])
+        elif action == "save":
+            return self._script_engine.save()
         
         return {"success": False, "message": f"Unknown script action: {action}"}

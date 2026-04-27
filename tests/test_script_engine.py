@@ -23,7 +23,8 @@ class TestScriptEngine(unittest.TestCase):
     
     def setUp(self):
         """Setup before each test"""
-        self.engine = ScriptEngine()
+        with patch('script_engine.os.path.exists', return_value=False):
+            self.engine = ScriptEngine()
     
     def test_upload_creates_script(self):
         """Test upload creates a new script"""
@@ -80,7 +81,8 @@ class TestScriptEngineExecution(unittest.TestCase):
 
     def setUp(self):
         """Setup before each test"""
-        self.engine = ScriptEngine()
+        with patch('script_engine.os.path.exists', return_value=False):
+            self.engine = ScriptEngine()
         self.keyboard = MagicMock()
         self.keyboard.press = MagicMock()
         self.keyboard.release = MagicMock()
@@ -207,7 +209,8 @@ class TestScriptEngineControl(unittest.TestCase):
 
     def setUp(self):
         """Setup before each test"""
-        self.engine = ScriptEngine()
+        with patch('script_engine.os.path.exists', return_value=False):
+            self.engine = ScriptEngine()
         self.keyboard = MagicMock()
         self.keyboard.press = MagicMock()
         self.keyboard.release = MagicMock()

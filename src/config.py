@@ -43,6 +43,7 @@ MSG_QUEUE_DEFAULT_TIMEOUT_MS = const(0)
 # Script Engine Configuration
 # ====================
 MAX_SCRIPTS = const(5)
+SCRIPTS_FILE = "config/scripts.json"
 
 # ====================
 # System Configuration

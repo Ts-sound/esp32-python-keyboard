@@ -1,0 +1,4 @@
+[
+  {"name": "jig", "steps": [{"keys": ["a"], "press_ms": 800, "release_ms": 500}], "loop": true, "variance_ms": 10},
+  {"name": "pull", "steps": [{"keys": ["b"], "press_ms": 300, "release_ms": 200}], "loop": 5, "variance_ms": 20}
+]

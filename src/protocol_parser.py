@@ -8,7 +8,7 @@ import json
 
 VALID_TYPES = {'keyboard', 'script'}
 VALID_KEYBOARD_ACTIONS = {'press', 'release', 'release_all', 'type', 'sequence'}
-VALID_SCRIPT_ACTIONS = {'upload', 'list', 'run', 'pause', 'resume', 'stop', 'delete', 'status'}
+VALID_SCRIPT_ACTIONS = {'upload', 'list', 'run', 'pause', 'resume', 'stop', 'delete', 'status', 'save'}
 
 
 def _error(message):
@@ -161,7 +161,7 @@ class ProtocolParser:
             return self._validate_script_upload_params(params)
         elif action in ('run', 'delete'):
             return self._validate_script_run_delete_params(params)
-        elif action in ('list', 'status', 'pause', 'resume', 'stop'):
+        elif action in ('list', 'status', 'pause', 'resume', 'stop', 'save'):
             return _success({'params': params})
         return _success({'params': params})
 

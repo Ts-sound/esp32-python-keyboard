@@ -178,8 +178,11 @@ JSON 协议 v1.0 替代原有的纯文本命令格式，提供结构化的命令
 **type**: `script`
 
 脚本存储在 RAM 中，最多 5 个命名脚本。
+可通过 `save` action 持久化到 `config/scripts.json` 文件。
 
 ### upload - 上传脚本
+
+**注意：upload 仅保存到 RAM，不会写入文件，防止覆盖现有脚本。**
 
 ```json
 {
@@ -281,6 +284,34 @@ JSON 协议 v1.0 替代原有的纯文本命令格式，提供结构化的命令
 ```
 
 无参数。
+
+### save - 保存脚本到文件
+
+将所有 RAM 中的脚本保存到 `config/scripts.json` 文件。
+
+```json
+{
+  "v": 1,
+  "type": "script",
+  "action": "save"
+}
+```
+
+无参数。
+
+**文件格式**（list 存储）：
+
+```json
+[
+  {"name": "jig", "steps": [...], "loop": true, "variance_ms": 10},
+  {"name": "pull", "steps": [...], "loop": 5, "variance_ms": 20}
+]
+```
+
+**注意：**
+- 启动时自动从 `config/scripts.json` 加载脚本
+- upload/delete 仅修改 RAM，不自动写入文件
+- 需显式调用 save 才会持久化
 
 ### delete - 删除脚本
 
