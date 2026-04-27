@@ -62,6 +62,11 @@ class ProtocolParser:
             if not params_result['success']:
                 return params_result
             params = params_result['params']
+        elif cmd_type == 'script':
+            params_result = self._validate_script_params(action, params)
+            if not params_result['success']:
+                return params_result
+            params = params_result['params']
 
         return _success({
             'type': cmd_type,
@@ -149,3 +154,56 @@ class ProtocolParser:
             result_step['variance_ms'] = default_variance
         
         return _success({'step': result_step})
+
+    def _validate_script_params(self, action, params):
+        """验证脚本命令参数"""
+        if action == 'upload':
+            return self._validate_script_upload_params(params)
+        elif action in ('run', 'delete'):
+            return self._validate_script_run_delete_params(params)
+        elif action in ('list', 'status', 'pause', 'resume', 'stop'):
+            return _success({'params': params})
+        return _success({'params': params})
+
+    def _validate_script_upload_params(self, params):
+        """验证 script upload 参数"""
+        if 'name' not in params:
+            return _error('Missing param: name')
+        name = params['name']
+        if not isinstance(name, str):
+            return _error('Invalid param: name must be string')
+        
+        if 'steps' not in params:
+            return _error('Missing param: steps')
+        steps = params['steps']
+        if not isinstance(steps, list):
+            return _error('Invalid param: steps must be array')
+        if len(steps) == 0:
+            return _error('Invalid param: steps must be non-empty')
+        
+        result_params = dict(params)
+        
+        if 'loop' not in result_params:
+            result_params['loop'] = False
+        if 'variance_ms' not in result_params:
+            result_params['variance_ms'] = 0
+        
+        default_variance = result_params['variance_ms']
+        validated_steps = []
+        for step in steps:
+            step_result = self._validate_sequence_step(step, default_variance)
+            if not step_result['success']:
+                return step_result
+            validated_steps.append(step_result['step'])
+        result_params['steps'] = validated_steps
+        
+        return _success({'params': result_params})
+
+    def _validate_script_run_delete_params(self, params):
+        """验证 script run/delete 参数"""
+        if 'name' not in params:
+            return _error('Missing param: name')
+        name = params['name']
+        if not isinstance(name, str):
+            return _error('Invalid param: name must be string')
+        return _success({'params': params})

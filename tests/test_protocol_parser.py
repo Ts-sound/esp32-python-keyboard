@@ -31,11 +31,11 @@ class TestProtocolParser(unittest.TestCase):
 
     def test_parse_valid_script_command(self):
         """测试解析有效的脚本命令"""
-        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test"}}'
+        json_str = '{"v":1,"type":"script","action":"run","params":{"name":"test"}}'
         result = self.parser.parse(json_str)
         self.assertTrue(result['success'])
         self.assertEqual(result['type'], 'script')
-        self.assertEqual(result['action'], 'upload')
+        self.assertEqual(result['action'], 'run')
 
     def test_parse_command_without_params(self):
         """测试解析无参数命令"""
@@ -109,9 +109,21 @@ class TestProtocolParser(unittest.TestCase):
 
     def test_all_script_actions_valid(self):
         """测试所有脚本操作都有效"""
-        actions = ['upload', 'list', 'run', 'pause', 'resume', 'stop', 'delete', 'status']
-        for action in actions:
-            json_str = f'{{"v":1,"type":"script","action":"{action}"}}'
+        action_params = {
+            'upload': '{"name":"test","steps":[{"keys":["a"]}]}',
+            'list': None,
+            'run': '{"name":"test"}',
+            'pause': None,
+            'resume': None,
+            'stop': None,
+            'delete': '{"name":"test"}',
+            'status': None
+        }
+        for action in action_params:
+            if action_params[action]:
+                json_str = f'{{"v":1,"type":"script","action":"{action}","params":{action_params[action]}}}'
+            else:
+                json_str = f'{{"v":1,"type":"script","action":"{action}"}}'
             result = self.parser.parse(json_str)
             self.assertTrue(result['success'], f'Action {action} should be valid')
 
@@ -293,6 +305,174 @@ class TestProtocolParser(unittest.TestCase):
         self.assertEqual(steps[1]['keys'], ['b'])
         self.assertEqual(steps[0]['variance_ms'], 20)
         self.assertEqual(steps[1]['variance_ms'], 20)
+
+    # ========== Script Upload Validation ==========
+
+    def test_script_upload_requires_name(self):
+        """测试 script upload 需要 name 参数"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('name', result['message'])
+
+    def test_script_upload_name_must_be_string(self):
+        """测试 script upload name 必须是字符串"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":123,"steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('name', result['message'])
+
+    def test_script_upload_requires_steps(self):
+        """测试 script upload 需要 steps 参数"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test"}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('steps', result['message'])
+
+    def test_script_upload_steps_must_be_array(self):
+        """测试 script upload steps 必须是数组"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":"invalid"}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('steps', result['message'])
+
+    def test_script_upload_steps_must_be_non_empty(self):
+        """测试 script upload steps 不能为空数组"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":[]}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('steps', result['message'])
+
+    def test_script_upload_valid_params(self):
+        """测试 script upload 有效参数"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"jig","steps":[{"keys":["a"],"press_ms":800,"release_ms":500}],"loop":true,"variance_ms":10}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['name'], 'jig')
+        self.assertEqual(len(result['params']['steps']), 1)
+        self.assertEqual(result['params']['loop'], True)
+        self.assertEqual(result['params']['variance_ms'], 10)
+
+    def test_script_upload_loop_defaults_to_false(self):
+        """测试 script upload loop 默认为 false"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['loop'], False)
+
+    def test_script_upload_variance_ms_defaults_to_0(self):
+        """测试 script upload variance_ms 默认为 0"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['variance_ms'], 0)
+
+    def test_script_upload_step_requires_keys(self):
+        """测试 script upload step 需要 keys"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":[{}]}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('keys', result['message'])
+
+    def test_script_upload_step_defaults_press_release_ms(self):
+        """测试 script upload step 默认 press_ms 和 release_ms"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        step = result['params']['steps'][0]
+        self.assertEqual(step['press_ms'], 50)
+        self.assertEqual(step['release_ms'], 50)
+
+    def test_script_upload_loop_can_be_int(self):
+        """测试 script upload loop 可以是整数"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":[{"keys":["a"]}],"loop":3}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['loop'], 3)
+
+    def test_script_upload_step_inherits_variance_ms(self):
+        """测试 script upload step 继承上级 variance_ms"""
+        json_str = '{"v":1,"type":"script","action":"upload","params":{"name":"test","steps":[{"keys":["a"]}],"variance_ms":10}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        step = result['params']['steps'][0]
+        self.assertEqual(step['variance_ms'], 10)
+
+    # ========== Script Run/Delete Validation ==========
+
+    def test_script_run_requires_name(self):
+        """测试 script run 需要 name 参数"""
+        json_str = '{"v":1,"type":"script","action":"run","params":{}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('name', result['message'])
+
+    def test_script_run_name_must_be_string(self):
+        """测试 script run name 必须是字符串"""
+        json_str = '{"v":1,"type":"script","action":"run","params":{"name":123}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('name', result['message'])
+
+    def test_script_run_valid_params(self):
+        """测试 script run 有效参数"""
+        json_str = '{"v":1,"type":"script","action":"run","params":{"name":"jig"}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['name'], 'jig')
+
+    def test_script_delete_requires_name(self):
+        """测试 script delete 需要 name 参数"""
+        json_str = '{"v":1,"type":"script","action":"delete","params":{}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('name', result['message'])
+
+    def test_script_delete_name_must_be_string(self):
+        """测试 script delete name 必须是字符串"""
+        json_str = '{"v":1,"type":"script","action":"delete","params":{"name":123}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('name', result['message'])
+
+    def test_script_delete_valid_params(self):
+        """测试 script delete 有效参数"""
+        json_str = '{"v":1,"type":"script","action":"delete","params":{"name":"jig"}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['name'], 'jig')
+
+    # ========== Script No-Param Actions ==========
+
+    def test_script_list_no_params_required(self):
+        """测试 script list 不需要参数"""
+        json_str = '{"v":1,"type":"script","action":"list"}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+
+    def test_script_status_no_params_required(self):
+        """测试 script status 不需要参数"""
+        json_str = '{"v":1,"type":"script","action":"status"}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+
+    def test_script_pause_no_params_required(self):
+        """测试 script pause 不需要参数"""
+        json_str = '{"v":1,"type":"script","action":"pause"}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+
+    def test_script_resume_no_params_required(self):
+        """测试 script resume 不需要参数"""
+        json_str = '{"v":1,"type":"script","action":"resume"}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+
+    def test_script_stop_no_params_required(self):
+        """测试 script stop 不需要参数"""
+        json_str = '{"v":1,"type":"script","action":"stop"}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
 
 
 if __name__ == "__main__":
