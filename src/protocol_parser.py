@@ -55,8 +55,97 @@ class ProtocolParser:
         if action not in valid_actions:
             return _error(f'Unknown action: {action}')
 
+        params = data.get('params', {})
+        
+        if cmd_type == 'keyboard':
+            params_result = self._validate_keyboard_params(action, params)
+            if not params_result['success']:
+                return params_result
+            params = params_result['params']
+
         return _success({
             'type': cmd_type,
             'action': action,
-            'params': data.get('params', {})
+            'params': params
         })
+
+    def _validate_keyboard_params(self, action, params):
+        """验证键盘命令参数"""
+        if action in ('press', 'release'):
+            return self._validate_press_release_params(params)
+        elif action == 'release_all':
+            return _success({'params': params})
+        elif action == 'type':
+            return self._validate_type_params(params)
+        elif action == 'sequence':
+            return self._validate_sequence_params(params)
+        return _success({'params': params})
+
+    def _validate_press_release_params(self, params):
+        """验证 press/release 参数"""
+        if 'keys' not in params:
+            return _error('Missing param: keys')
+        keys = params['keys']
+        if not isinstance(keys, list):
+            return _error('Invalid param: keys must be array')
+        if len(keys) == 0:
+            return _error('Invalid param: keys must be non-empty')
+        return _success({'params': params})
+
+    def _validate_type_params(self, params):
+        """验证 type 参数"""
+        if 'text' not in params:
+            return _error('Missing param: text')
+        text = params['text']
+        if not isinstance(text, str):
+            return _error('Invalid param: text must be string')
+        result_params = dict(params)
+        if 'delay_ms' not in result_params:
+            result_params['delay_ms'] = 50
+        return _success({'params': result_params})
+
+    def _validate_sequence_params(self, params):
+        """验证 sequence 参数"""
+        if 'steps' not in params:
+            return _error('Missing param: steps')
+        steps = params['steps']
+        if not isinstance(steps, list):
+            return _error('Invalid param: steps must be array')
+        if len(steps) == 0:
+            return _error('Invalid param: steps must be non-empty')
+        
+        result_params = dict(params)
+        
+        if 'loop' not in result_params:
+            result_params['loop'] = False
+        if 'variance_ms' not in result_params:
+            result_params['variance_ms'] = 0
+        
+        default_variance = result_params['variance_ms']
+        validated_steps = []
+        for step in steps:
+            step_result = self._validate_sequence_step(step, default_variance)
+            if not step_result['success']:
+                return step_result
+            validated_steps.append(step_result['step'])
+        result_params['steps'] = validated_steps
+        
+        return _success({'params': result_params})
+
+    def _validate_sequence_step(self, step, default_variance):
+        """验证 sequence step"""
+        if 'keys' not in step:
+            return _error('Missing param: keys in step')
+        keys = step['keys']
+        if not isinstance(keys, list) or len(keys) == 0:
+            return _error('Invalid param: keys in step must be non-empty array')
+        
+        result_step = dict(step)
+        if 'press_ms' not in result_step:
+            result_step['press_ms'] = 50
+        if 'release_ms' not in result_step:
+            result_step['release_ms'] = 50
+        if 'variance_ms' not in result_step:
+            result_step['variance_ms'] = default_variance
+        
+        return _success({'step': result_step})

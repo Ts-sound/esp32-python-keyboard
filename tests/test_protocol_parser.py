@@ -95,9 +95,15 @@ class TestProtocolParser(unittest.TestCase):
 
     def test_all_keyboard_actions_valid(self):
         """测试所有键盘操作都有效"""
-        actions = ['press', 'release', 'release_all', 'type', 'sequence']
-        for action in actions:
-            json_str = f'{{"v":1,"type":"keyboard","action":"{action}"}}'
+        action_params = {
+            'press': '{"keys":["a"]}',
+            'release': '{"keys":["a"]}',
+            'release_all': '{}',
+            'type': '{"text":"hi"}',
+            'sequence': '{"steps":[{"keys":["a"]}]}'
+        }
+        for action in action_params:
+            json_str = f'{{"v":1,"type":"keyboard","action":"{action}","params":{action_params[action]}}}'
             result = self.parser.parse(json_str)
             self.assertTrue(result['success'], f'Action {action} should be valid')
 
@@ -108,6 +114,185 @@ class TestProtocolParser(unittest.TestCase):
             json_str = f'{{"v":1,"type":"script","action":"{action}"}}'
             result = self.parser.parse(json_str)
             self.assertTrue(result['success'], f'Action {action} should be valid')
+
+
+# ========== Keyboard Press/Release Validation ==========
+
+    def test_press_requires_keys(self):
+        """测试 press 命令需要 keys 参数"""
+        json_str = '{"v":1,"type":"keyboard","action":"press","params":{}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('keys', result['message'])
+
+    def test_press_keys_must_be_array(self):
+        """测试 press keys 必须是数组"""
+        json_str = '{"v":1,"type":"keyboard","action":"press","params":{"keys":"a"}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('keys', result['message'])
+
+    def test_press_keys_must_be_non_empty(self):
+        """测试 press keys 不能为空数组"""
+        json_str = '{"v":1,"type":"keyboard","action":"press","params":{"keys":[]}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('keys', result['message'])
+
+    def test_press_valid_keys(self):
+        """测试有效的 press keys"""
+        json_str = '{"v":1,"type":"keyboard","action":"press","params":{"keys":["ctrl","s"]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['keys'], ['ctrl', 's'])
+
+    def test_release_requires_keys(self):
+        """测试 release 命令需要 keys 参数"""
+        json_str = '{"v":1,"type":"keyboard","action":"release","params":{}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('keys', result['message'])
+
+    def test_release_valid_keys(self):
+        """测试有效的 release keys"""
+        json_str = '{"v":1,"type":"keyboard","action":"release","params":{"keys":["a"]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['keys'], ['a'])
+
+    def test_release_all_no_params_required(self):
+        """测试 release_all 不需要参数"""
+        json_str = '{"v":1,"type":"keyboard","action":"release_all"}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+
+    # ========== Keyboard Type Validation ==========
+
+    def test_type_requires_text(self):
+        """测试 type 命令需要 text 参数"""
+        json_str = '{"v":1,"type":"keyboard","action":"type","params":{}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('text', result['message'])
+
+    def test_type_text_must_be_string(self):
+        """测试 type text 必须是字符串"""
+        json_str = '{"v":1,"type":"keyboard","action":"type","params":{"text":123}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('text', result['message'])
+
+    def test_type_valid_params(self):
+        """测试有效的 type 参数"""
+        json_str = '{"v":1,"type":"keyboard","action":"type","params":{"text":"Hello","delay_ms":50}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['text'], 'Hello')
+        self.assertEqual(result['params']['delay_ms'], 50)
+
+    def test_type_delay_ms_defaults_to_50(self):
+        """测试 type delay_ms 默认值为 50"""
+        json_str = '{"v":1,"type":"keyboard","action":"type","params":{"text":"Hi"}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['delay_ms'], 50)
+
+    # ========== Keyboard Sequence Validation ==========
+
+    def test_sequence_requires_steps(self):
+        """测试 sequence 命令需要 steps 参数"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('steps', result['message'])
+
+    def test_sequence_steps_must_be_array(self):
+        """测试 sequence steps 必须是数组"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":"invalid"}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('steps', result['message'])
+
+    def test_sequence_steps_must_be_non_empty(self):
+        """测试 sequence steps 不能为空数组"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[]}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('steps', result['message'])
+
+    def test_sequence_step_requires_keys(self):
+        """测试 sequence step 需要 keys"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{}]}}'
+        result = self.parser.parse(json_str)
+        self.assertFalse(result['success'])
+        self.assertIn('keys', result['message'])
+
+    def test_sequence_valid_params(self):
+        """测试有效的 sequence 参数"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"]}],"loop":true,"variance_ms":10}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['steps'][0]['keys'], ['a'])
+        self.assertEqual(result['params']['loop'], True)
+        self.assertEqual(result['params']['variance_ms'], 10)
+
+    def test_sequence_loop_defaults_to_false(self):
+        """测试 sequence loop 默认为 false"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['loop'], False)
+
+    def test_sequence_variance_ms_defaults_to_0(self):
+        """测试 sequence variance_ms 默认为 0"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['variance_ms'], 0)
+
+    def test_sequence_step_defaults_press_release_ms(self):
+        """测试 sequence step 默认 press_ms 和 release_ms"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"]}]}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        step = result['params']['steps'][0]
+        self.assertEqual(step['press_ms'], 50)
+        self.assertEqual(step['release_ms'], 50)
+
+    def test_sequence_loop_can_be_int(self):
+        """测试 sequence loop 可以是整数"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"]}],"loop":3}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        self.assertEqual(result['params']['loop'], 3)
+
+    def test_sequence_step_inherits_variance_ms(self):
+        """测试 sequence step 继承上级 variance_ms"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"]}],"variance_ms":10}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        step = result['params']['steps'][0]
+        self.assertEqual(step['variance_ms'], 10)
+
+    def test_sequence_step_can_override_variance_ms(self):
+        """测试 sequence step 可以覆盖 variance_ms"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"],"variance_ms":5}],"variance_ms":10}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        step = result['params']['steps'][0]
+        self.assertEqual(step['variance_ms'], 5)
+
+    def test_sequence_multiple_steps(self):
+        """测试 sequence 多个步骤"""
+        json_str = '{"v":1,"type":"keyboard","action":"sequence","params":{"steps":[{"keys":["a"]},{"keys":["b"]}],"variance_ms":20}}'
+        result = self.parser.parse(json_str)
+        self.assertTrue(result['success'])
+        steps = result['params']['steps']
+        self.assertEqual(len(steps), 2)
+        self.assertEqual(steps[0]['keys'], ['a'])
+        self.assertEqual(steps[1]['keys'], ['b'])
+        self.assertEqual(steps[0]['variance_ms'], 20)
+        self.assertEqual(steps[1]['variance_ms'], 20)
 
 
 if __name__ == "__main__":
