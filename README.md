@@ -5,10 +5,10 @@
 ## 功能特性
 
 - **BLE HID 键盘**: 作为蓝牙键盘连接到手机/电脑
-- **WiFi 控制**: 通过 TCP 接收远程命令
-- **RF4 自动按键**: 支持 JIG 和 PULL 两种自动按键模式
+- **WiFi 控制**: 通过 TCP 接收 JSON 命令
+- **脚本引擎**: 支持命名脚本存储、循环执行、暂停/恢复
 - **消息队列**: 模块间通信的发布/订阅机制
-- **asyncio 并发**: 基于 asyncio 的并发模型，RF4 后台运行
+- **asyncio 并发**: 基于 asyncio 的并发模型，脚本后台运行
 
 ## 项目结构
 
@@ -28,11 +28,13 @@ esp32-python-keyboard/
 │   ├── config.py                  # 统一配置
 │   ├── keyboard_app.py            # 键盘应用逻辑
 │   ├── keyboard_device.py         # 键盘设备（直接使用 hid_services）
+│   ├── keyboard_service.py        # 键盘命令处理
+│   ├── protocol_parser.py         # JSON 协议解析器
+│   ├── script_engine.py           # 脚本引擎
 │   ├── hid_mapper.py              # HID 键码映射
 │   ├── led_driver.py              # LED 驱动
 │   ├── msg_queue.py               # 消息队列
-│   ├── wifi_service.py            # WiFi 服务
-│   └── rf4_service.py             # RF4 服务
+│   └── wifi_service.py            # WiFi 服务
 │
 ├── tests/                         # 单元测试
 │   ├── test_msg_queue.py
@@ -100,33 +102,36 @@ WIFI_PASSWORD = "你的 WiFi 密码"
 ### 连接
 
 - **地址**: `tcp://<ESP32_IP>:80`
-- **格式**: 纯文本命令
+- **格式**: JSON (v1.0)
 
-### 命令格式
-
-#### 纯文本格式（当前支持）
-
-```
-# RF4 控制
-jig;press_ms;release_ms     # JIG 模式
-pull;press_ms;release_ms    # PULL 模式
-clear                       # 停止自动按键
-
-# 键盘控制
-shift;a                     # Shift+A
-ctrl;s                      # Ctrl+S
-enter                       # 回车键
-a                           # 按下 'a' 键
-```
-
-#### JSON 格式（建议优化）
+### 命令示例
 
 ```json
-{"type": "rf4", "action": "jig", "params": {"press_ms": 800, "release_ms": 500}}
-{"type": "keyboard", "action": "press", "params": {"keys": ["ctrl", "s"]}}
+// 键盘按键
+{"v": 1, "type": "keyboard", "action": "press", "params": {"keys": ["a"]}}
+{"v": 1, "type": "keyboard", "action": "press", "params": {"keys": ["ctrl", "s"]}}
+{"v": 1, "type": "keyboard", "action": "type", "params": {"text": "Hello World"}}
+
+// 上传脚本
+{"v": 1, "type": "script", "action": "upload", "params": {
+  "name": "jig",
+  "loop": true,
+  "variance_ms": 10,
+  "steps": [
+    {"keys": ["a"], "press_ms": 800, "release_ms": 500}
+  ]
+}}
+
+// 运行/停止脚本
+{"v": 1, "type": "script", "action": "run", "params": {"name": "jig"}}
+{"v": 1, "type": "script", "action": "stop"}
+{"v": 1, "type": "script", "action": "status"}
+
+// 保存脚本到文件（持久化）
+{"v": 1, "type": "script", "action": "save"}
 ```
 
-详见 [设计文档](docs/design/README.md) 中的 "JSON 消息格式支持" 章节。
+完整协议文档见 [docs/design/protocols/json_protocol.md](docs/design/protocols/json_protocol.md)。
 
 ## 配置说明
 
@@ -136,9 +141,9 @@ a                           # 按下 'a' 键
 |--------|--------|------|
 | `WIFI_SSID` | "T" | WiFi 名称 |
 | `WIFI_PASSWORD` | "12345678" | WiFi 密码 |
-| `RF4_JIG_PRESS_MS` | 1135 | JIG 按压时间 (ms) |
-| `RF4_JIG_RELEASE_MS` | 1985 | JIG 释放时间 (ms) |
 | `HID_DEVICE_NAME` | "ESP32-Keyboard" | BLE 设备名称 |
+| `MAX_SCRIPTS` | 5 | 最大脚本数量 |
+| `SCRIPTS_FILE` | "config/scripts.json" | 脚本持久化文件 |
 
 ## 测试
 
@@ -168,9 +173,9 @@ python -m pytest test_hid_mapper.py -v
 ```
 main.py (asyncio 入口)
     └── keyboard_app.py (asyncio 主循环)
-        ├── RF4 后台任务 (asyncio.create_task)
+        ├── ScriptEngine 后台任务 (asyncio.create_task)
         ├── WiFi 服务 (async 轮询)
-        └── keyboard_service (消息队列回调)
+        └── ProtocolParser → KeyboardService
 ```
 
 详见 [设计文档](docs/design/README.md)。
@@ -189,10 +194,13 @@ main.py (asyncio 入口)
 - `main.py` - 应用主入口（设备上 /main.py）
 - `src/config.py` - 统一配置管理
 - `src/keyboard_device.py` - 键盘设备（直接使用 hid_services）
+- `src/keyboard_service.py` - 键盘命令处理
+- `src/protocol_parser.py` - JSON 协议解析器
+- `src/script_engine.py` - 脚本引擎
 - `src/hid_mapper.py` - HID 键码映射表
 - `src/led_driver.py` - LED 驱动
 - `src/msg_queue.py` - 消息队列
-- `src/wifi_service.py` / `src/rf4_service.py` - 业务服务
+- `src/wifi_service.py` - WiFi 服务
 - `src/keyboard_app.py` - 应用逻辑协调器
 
 ### 添加新功能

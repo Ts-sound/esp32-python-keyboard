@@ -18,15 +18,6 @@ WIFI_RECONNECT_DELAY_SEC = const(5)
 WIFI_SOCKET_TIMEOUT_SEC = const(1800)
 
 # ====================
-# RF4 Service Configuration
-# ====================
-RF4_JIG_PRESS_MS = const(1135)
-RF4_JIG_RELEASE_MS = const(1985)
-RF4_PULL_PRESS_MS = const(800)
-RF4_PULL_RELEASE_MS = const(500)
-RF4_RANDOM_VARIANCE = const(0.1)
-
-# ====================
 # HID Configuration
 # ====================
 HID_DEVICE_NAME = "ESP32-Keyboard"
@@ -47,6 +38,12 @@ LED_HEARTBEAT_INTERVAL_MS = const(1000)
 # ====================
 MSG_QUEUE_MAX_SIZE = const(10)
 MSG_QUEUE_DEFAULT_TIMEOUT_MS = const(0)
+
+# ====================
+# Script Engine Configuration
+# ====================
+MAX_SCRIPTS = const(5)
+SCRIPTS_FILE = "config/scripts.json"
 
 # ====================
 # System Configuration

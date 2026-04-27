@@ -9,6 +9,7 @@ import network
 import socket
 import time
 import asyncio
+import json
 
 from config import (
     WIFI_SSID,
@@ -312,6 +313,25 @@ class WiFiService:
             return False
         except Exception as e:
             print(f"[ERROR] WiFiService.send_data: {e}")
+            import sys
+            sys.print_exception(e)
+            return False
+    
+    def send_response(self, response):
+        """
+        Send JSON response
+        
+        Args:
+            response: Response dictionary
+            
+        Returns:
+            bool: Success status
+        """
+        try:
+            json_str = json.dumps(response)
+            return self.send_data(json_str)
+        except Exception as e:
+            print(f"[ERROR] WiFiService.send_response: {e}")
             import sys
             sys.print_exception(e)
             return False

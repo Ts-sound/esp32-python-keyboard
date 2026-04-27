@@ -13,7 +13,7 @@ from config import (
     WIFI_TIMEOUT_SEC,
 )
 from keyboard_device import KeyboardDevice
-from rf4_service import RF4Service
+from script_engine import ScriptEngine
 from wifi_service import WiFiService
 from msg_queue import MessageQueue
 from keyboard_service import KeyboardService
@@ -31,9 +31,9 @@ class KeyboardApp:
         self._msg_queue = None
         self._keyboard = None
         self._wifi = None
-        self._rf4 = None
+        self._script_engine = None
         self._keyboard_service = None
-        self._rf4_task = None
+        self._script_task = None
         self._running = False
     
     def init(self):
@@ -64,16 +64,17 @@ class KeyboardApp:
                 return False
             print("[INFO] WiFi started")
             
-            # 4. RF4 service
-            self._rf4 = RF4Service(
-                keyboard_device=self._keyboard,
-                msg_queue=self._msg_queue
-            )
-            print("[INFO] RF4 service initialized")
+            # Subscribe WiFi to keyboard/response
+            self._msg_queue.subscribe("keyboard/response", self._wifi.send_response)
+            
+            # 4. Script engine
+            self._script_engine = ScriptEngine(keyboard_device=self._keyboard)
+            print("[INFO] Script engine initialized")
             
             # 5. Keyboard service (handles WiFi commands)
             self._keyboard_service = KeyboardService(
                 keyboard_device=self._keyboard,
+                script_engine=self._script_engine,
                 msg_queue=self._msg_queue
             )
             print("[INFO] Keyboard service initialized")
@@ -111,8 +112,8 @@ class KeyboardApp:
     
     async def run_async(self):
         """Run main loop (async) - follows keyboard_example.py pattern"""
-        # Start RF4 as background task
-        self._rf4_task = asyncio.create_task(self._rf4.run_async())
+        # Start ScriptEngine as background task
+        self._script_task = asyncio.create_task(self._script_engine.run_async_script())
         
         # Main WiFi loop
         while self._running:
@@ -138,7 +139,7 @@ class KeyboardApp:
                 self._wifi.close_client()
             
             # Commands handled by keyboard_service via message queue
-            # RF4 runs in background task
+            # ScriptEngine runs in background task
             
             await asyncio.sleep_ms(MAIN_LOOP_INTERVAL_MS)
     
@@ -146,11 +147,11 @@ class KeyboardApp:
         """Stop application (async)"""
         self._running = False
         
-        # Cancel RF4 task
-        if self._rf4_task:
-            self._rf4_task.cancel()
+        # Cancel ScriptEngine task
+        if self._script_task:
+            self._script_task.cancel()
             try:
-                await self._rf4_task
+                await self._script_task
             except asyncio.CancelledError:
                 pass
         
@@ -176,9 +177,9 @@ class KeyboardApp:
         """Get WiFi service"""
         return self._wifi
     
-    def get_rf4(self):
-        """Get RF4 service"""
-        return self._rf4
+    def get_script_engine(self):
+        """Get script engine"""
+        return self._script_engine
     
     def get_msg_queue(self):
         """Get message queue"""

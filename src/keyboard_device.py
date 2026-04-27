@@ -9,7 +9,7 @@ import time
 import sys
 
 from hid_services import Keyboard
-from hid_mapper import HID_KEYMAP
+from hid_mapper import HID_KEYMAP, MODIFIER_KEY_ALIASES
 
 
 class KeyboardDevice:
@@ -106,21 +106,19 @@ class KeyboardDevice:
             return False
     
     def press(self, key):
-        """
-        Press key
-        
-        Args:
-            key: Key name (e.g., 'a', 'enter', 'F1')
-            
-        Returns:
-            bool: Success status
-        """
         try:
-            if key not in HID_KEYMAP:
+            key_lower = key.lower()
+            
+            if key_lower in MODIFIER_KEY_ALIASES:
+                modifier_name = MODIFIER_KEY_ALIASES[key_lower]
+                self._modifiers[modifier_name] = 1
+                return self._send_report()
+            
+            if key_lower not in HID_KEYMAP:
                 print(f"[WARN] Unknown key: {key}")
                 return False
             
-            code = HID_KEYMAP[key]
+            code = HID_KEYMAP[key_lower]
             if code not in self._pressed_keys:
                 self._pressed_keys.append(code)
             return self._send_report()
@@ -130,20 +128,19 @@ class KeyboardDevice:
             return False
     
     def release(self, key):
-        """
-        Release key
-        
-        Args:
-            key: Key name
-            
-        Returns:
-            bool: Success status
-        """
         try:
-            if key not in HID_KEYMAP:
+            key_lower = key.lower()
+            
+            if key_lower in MODIFIER_KEY_ALIASES:
+                modifier_name = MODIFIER_KEY_ALIASES[key_lower]
+                if modifier_name in self._modifiers:
+                    del self._modifiers[modifier_name]
+                return self._send_report()
+            
+            if key_lower not in HID_KEYMAP:
                 return False
             
-            code = HID_KEYMAP[key]
+            code = HID_KEYMAP[key_lower]
             if code in self._pressed_keys:
                 self._pressed_keys.remove(code)
             return self._send_report()
