@@ -53,9 +53,28 @@ esp32-python-keyboard/
 └── README.md
 ```
 
+## 硬件要求
+
+本项目依赖 MicroPythonBLEHID 库，需满足以下硬件要求：
+
+- **ESP32 芯片**，需具备：
+  - 蓝牙支持
+  - 512 kB SRAM 或以上
+- **MicroPython** v1.18 或更高版本
+
 ## 快速开始
 
-### 0. 安装依赖
+### 0. 克隆仓库
+
+```bash
+# 克隆时自动拉取子模块
+git clone --recurse-submodules <repo-url>
+
+# 若已克隆，手动初始化子模块
+git submodule update --init --recursive
+```
+
+### 1. 安装依赖
 
 ```bash
 # 使用 setup.py 脚本检查并安装依赖
@@ -65,7 +84,7 @@ python scripts/setup.py
 pip install esptool mpremote
 ```
 
-### 1. 烧录 MicroPython 固件
+### 2. 烧录 MicroPython 固件
 
 ```bash
 # 使用 install.py 脚本（推荐）
@@ -77,14 +96,14 @@ esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 \
     write_flash -z 0x1000 bin/ESP32_GENERIC-20240602-v1.23.0.bin
 ```
 
-### 2. 上传代码
+### 3. 上传代码
 
 ```bash
 # 使用 upload.py 脚本（使用 mpremote）
 python scripts/upload.py /dev/ttyUSB0
 ```
 
-### 3. 配置 WiFi
+### 4. 配置 WiFi
 
 编辑 `src/config.py`，修改 WiFi 凭据：
 
@@ -93,7 +112,7 @@ WIFI_SSID = "你的 WiFi 名称"
 WIFI_PASSWORD = "你的 WiFi 密码"
 ```
 
-### 4. 运行
+### 5. 运行
 
 重启 ESP32，LED 闪烁表示启动成功。
 
